@@ -408,11 +408,11 @@
                 </div>
 
                 <div class="audio-controls">
-                    <span>🔊 Archivo de Servidor: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia (Amarillo)</strong></span>
+                    <span>🔊 Audio Ambiental: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
                     <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
                 </div>
 
-                <!-- REPRODUCTOR NATIVO PARA SERVIDORES -->
+                <!-- REPRODUCTOR NATIVO DE AUDIOS REALES EN LA NUBE -->
                 <audio id="reproductorAudioReal" loop preload="auto"></audio>
 
                 <div class="holistic-box" id="labHolisticBox">
@@ -583,44 +583,70 @@
             }
         }
 
-        // --- MANEJO DE AUDIOS LOCALES / EN SERVIDORES ---
+        // --- AUDIOS AMBIENTALES REALES DESDE SERVIDORES CDN PUBLICOS ---
+        const bancoAudiosReales = {
+            lluvia: {
+                amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
+                naranja: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
+                rojo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"
+            },
+            tormenta: {
+                amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
+                naranja: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg",
+                rojo: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg"
+            },
+            viento: {
+                amarillo: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
+                naranja: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
+                rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
+            },
+            nieve: {
+                amarillo: "https://actions.google.com/sounds/v1/weather/wind_synth_howl.ogg",
+                naranja: "https://actions.google.com/sounds/v1/weather/wind_synth_howl.ogg",
+                rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
+            },
+            calor: {
+                amarillo: "https://actions.google.com/sounds/v1/environments/desert_day.ogg",
+                naranja: "https://actions.google.com/sounds/v1/environments/desert_day.ogg",
+                rojo: "https://actions.google.com/sounds/v1/environments/desert_day.ogg"
+            }
+        };
+
         let isAudioPlaying = false;
         let labAmenazaActual = 'lluvia';
         let labNivelActual = 'amarillo';
 
         const audioPlayer = document.getElementById('reproductorAudioReal');
 
-        function playServerAudio() {
-            // Ruta interna a tu carpeta 'sonidos/'
-            const rutaAudio = `sonidos/${labAmenazaActual}_${labNivelActual}.mp3`;
+        function playRealAudio() {
+            const urlAudio = bancoAudiosReales[labAmenazaActual][labNivelActual];
             
             const nombres = {
-                lluvia: 'Lluvia Acumulada',
-                tormenta: 'Tormenta Eléctrica',
-                viento: 'Vendaval y Ráfagas',
-                nieve: 'Ventisca de Nieve',
-                calor: 'Ambiente de Verano'
+                lluvia: 'Lluvia Acumulada Real',
+                tormenta: 'Tormenta Eléctrica Real',
+                viento: 'Vendaval y Ráfagas Reales',
+                nieve: 'Ventisca de Nieve Real',
+                calor: 'Ambiente de Verano Real'
             };
-            
             document.getElementById('nombreSonido').innerText = `${nombres[labAmenazaActual]} (${labNivelActual.toUpperCase()})`;
 
-            if (audioPlayer.src !== window.location.origin + '/' + rutaAudio && audioPlayer.src !== rutaAudio) {
-                audioPlayer.src = rutaAudio;
+            if (audioPlayer.src !== urlAudio) {
+                audioPlayer.src = urlAudio;
             }
 
-            // ELEVACIÓN DE NIVEL DE VOLUMEN SEGÚN ALERTA
-            // Amarillo: 35% | Naranja: 70% | Rojo: 100% (Máxima intensidad)
-            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.70 : 1.0);
+            // ELEVACIÓN DE VOLUMEN SEGÚN NIVEL DE ALERTA:
+            // Amarillo: 35% | Naranja: 65% | Rojo: 100% (Potencia Máxima)
+            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.65 : 1.0);
 
             audioPlayer.play().then(() => {
                 isAudioPlaying = true;
                 document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
             }).catch(err => {
-                console.log("Esperando interacción o verificando archivo MP3 en servidor:", err);
+                console.log("Error de audio:", err);
             });
         }
 
-        function stopServerAudio() {
+        function stopRealAudio() {
             audioPlayer.pause();
             isAudioPlaying = false;
             document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
@@ -628,15 +654,15 @@
 
         function toggleAudio() {
             if (isAudioPlaying) {
-                stopServerAudio();
+                stopRealAudio();
             } else {
-                playServerAudio();
+                playRealAudio();
             }
         }
 
         function updateAudioState() {
             if (isAudioPlaying) {
-                playServerAudio();
+                playRealAudio();
             }
         }
 
