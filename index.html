@@ -407,7 +407,7 @@
                     </p>
                 </div>
 
-                <!-- CONTROLES DE AUDIO (SOLO SE MUESTRAN PARA AMENAZAS CON AUDIO DISPONIBLE) -->
+                <!-- CONTROLES DE AUDIO -->
                 <div class="audio-controls" id="bloqueAudioContainer">
                     <span>🔊 Audio Ambiental: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
                     <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
@@ -583,7 +583,7 @@
             }
         }
 
-        // --- AUDIOS AMBIENTALES SELECCIONADOS (SOLO LLUVIA, TORMENTA Y VIENTO) ---
+        // --- AUDIOS AMBIENTALES REVISION POTENCIA Y VIENTO ---
         const bancoAudiosReales = {
             lluvia: {
                 amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
@@ -597,7 +597,7 @@
             },
             viento: {
                 amarillo: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
-                naranja: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
+                naranja: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg",
                 rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
             }
         };
@@ -627,9 +627,9 @@
                 audioPlayer.src = urlAudio;
             }
 
-            // VOLUMEN E INTENSIDAD SEGÚN ALERTA:
-            // Amarillo: 40% | Naranja: 75% | Rojo: 100% (Fuerza e impacto total)
-            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.40 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
+            // AUMENTO DE POTENCIA Y VOLUMEN:
+            // Amarillo: 50% | Naranja: 80% | Rojo: 100% (Ganancia máxima de salida)
+            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.50 : (labNivelActual === 'naranja' ? 0.80 : 1.0);
 
             audioPlayer.play().then(() => {
                 isAudioPlaying = true;
