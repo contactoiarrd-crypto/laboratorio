@@ -407,12 +407,12 @@
                     </p>
                 </div>
 
-                <div class="audio-controls">
+                <!-- CONTROLES DE AUDIO (SOLO SE MUESTRAN PARA AMENAZAS CON AUDIO DISPONIBLE) -->
+                <div class="audio-controls" id="bloqueAudioContainer">
                     <span>🔊 Audio Ambiental: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
                     <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
                 </div>
 
-                <!-- REPRODUCTOR NATIVO DE AUDIOS REALES EN LA NUBE -->
                 <audio id="reproductorAudioReal" loop preload="auto"></audio>
 
                 <div class="holistic-box" id="labHolisticBox">
@@ -583,7 +583,7 @@
             }
         }
 
-        // --- AUDIOS AMBIENTALES REALES DESDE SERVIDORES CDN PUBLICOS ---
+        // --- AUDIOS AMBIENTALES SELECCIONADOS (SOLO LLUVIA, TORMENTA Y VIENTO) ---
         const bancoAudiosReales = {
             lluvia: {
                 amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
@@ -599,16 +599,6 @@
                 amarillo: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
                 naranja: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
                 rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
-            },
-            nieve: {
-                amarillo: "https://actions.google.com/sounds/v1/weather/wind_synth_howl.ogg",
-                naranja: "https://actions.google.com/sounds/v1/weather/wind_synth_howl.ogg",
-                rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
-            },
-            calor: {
-                amarillo: "https://actions.google.com/sounds/v1/environments/desert_day.ogg",
-                naranja: "https://actions.google.com/sounds/v1/environments/desert_day.ogg",
-                rojo: "https://actions.google.com/sounds/v1/environments/desert_day.ogg"
             }
         };
 
@@ -619,14 +609,17 @@
         const audioPlayer = document.getElementById('reproductorAudioReal');
 
         function playRealAudio() {
+            if (!bancoAudiosReales[labAmenazaActual]) {
+                stopRealAudio();
+                return;
+            }
+
             const urlAudio = bancoAudiosReales[labAmenazaActual][labNivelActual];
             
             const nombres = {
                 lluvia: 'Lluvia Acumulada Real',
-                tormenta: 'Tormenta Eléctrica Real',
-                viento: 'Vendaval y Ráfagas Reales',
-                nieve: 'Ventisca de Nieve Real',
-                calor: 'Ambiente de Verano Real'
+                tormenta: 'Tormenta Eléctrica Severa',
+                viento: 'Vendaval y Ráfagas Reales'
             };
             document.getElementById('nombreSonido').innerText = `${nombres[labAmenazaActual]} (${labNivelActual.toUpperCase()})`;
 
@@ -634,15 +627,15 @@
                 audioPlayer.src = urlAudio;
             }
 
-            // ELEVACIÓN DE VOLUMEN SEGÚN NIVEL DE ALERTA:
-            // Amarillo: 35% | Naranja: 65% | Rojo: 100% (Potencia Máxima)
-            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.65 : 1.0);
+            // VOLUMEN E INTENSIDAD SEGÚN ALERTA:
+            // Amarillo: 40% | Naranja: 75% | Rojo: 100% (Fuerza e impacto total)
+            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.40 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
 
             audioPlayer.play().then(() => {
                 isAudioPlaying = true;
                 document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
             }).catch(err => {
-                console.log("Error de audio:", err);
+                console.log("Esperando interacción para audio:", err);
             });
         }
 
@@ -661,8 +654,15 @@
         }
 
         function updateAudioState() {
-            if (isAudioPlaying) {
-                playRealAudio();
+            const bloqueAudio = document.getElementById('bloqueAudioContainer');
+            if (bancoAudiosReales[labAmenazaActual]) {
+                bloqueAudio.style.display = 'flex';
+                if (isAudioPlaying) {
+                    playRealAudio();
+                }
+            } else {
+                bloqueAudio.style.display = 'none';
+                stopRealAudio();
             }
         }
 
