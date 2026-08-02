@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Interamericana de Percepción y Autoprotección - IIARRD</title>
+    <style>
+        :root {
+            --color-amarillo: #d97706;
+            --bg-amarillo: #fef3c7;
+            --border-amarillo: #f59e0b;
+            
+            --color-naranja: #ea580c;
+            --bg-naranja: #ffedd5;
+            --border-naranja: #f97316;
+            
+            --color-rojo: #dc2626;
+            --bg-rojo: #fee2e2;
+            --border-rojo: #ef4444;
+
+            --color-principal: #0f172a;
+            --color-secundario: #475569;
+            --bg-pagina: #f8fafc;
+            --bg-tarjeta: #ffffff;
+            --borde-suave: #e2e8f0;
+            --color-exito: #059669;
+            --color-institucional: #0369a1;
+
+            --alert-active-color: var(--color-amarillo);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-pagina);
+            color: var(--color-principal);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .contenedor-principal {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 24px;
+            background-color: var(--bg-tarjeta);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid var(--borde-suave);
+        }
+
+        .insignia-institucional {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: var(--color-institucional);
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            color: var(--color-principal);
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--color-secundario);
+            font-size: 0.95rem;
+        }
+
+        .nota-interamericana {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: #0369a1;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        /* NAVEGACIÓN PRINCIPAL */
+        .pestanas-principales {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .boton-seccion {
+            flex: 1;
+            padding: 12px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--color-secundario);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .boton-seccion.activo {
+            background: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .bloque-contenido {
+            display: none;
+        }
+
+        .bloque-contenido.activo {
+            display: block;
+        }
+
+        .seccion-tarjeta {
+            background: var(--bg-tarjeta);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid var(--borde-suave);
+            margin-bottom: 20px;
+        }
+
+        /* PESTAÑA 1: LABORATORIO MULTIAMENAZA */
+        .visor-sensorial {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .selector-alertas-laboratorio {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn-lab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+
+        .btn-lab.activo {
+            opacity: 1;
+            transform: scale(1.03);
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .btn-lab-amarillo { background: var(--color-amarillo); color: #fff; }
+        .btn-lab-naranja { background: var(--color-naranja); color: #fff; }
+        .btn-lab-rojo { background: var(--color-rojo); color: #fff; }
+
+        .visualizador-contenedor {
+            height: 170px;
+            background: #020617;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            border: 1px solid #334155;
+            transition: background 0.5s;
+        }
+
+        .capa-fluido {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.7) 0%, rgba(14, 165, 233, 0.95) 100%);
+            transition: height 0.8s ease, background 0.5s;
+            z-index: 1;
+        }
+
+        .silueta-humana {
+            height: 130px;
+            z-index: 2;
+            opacity: 0.85;
+            margin-bottom: 4px;
+            transition: transform 0.5s ease;
+            transform-origin: bottom center;
+        }
+
+        .audio-controls {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .btn-audio {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .holistic-box {
+            background: rgba(255,255,255,0.05);
+            border-left: 4px solid var(--alert-active-color);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .holistic-box h4 {
+            color: var(--alert-active-color);
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        /* RESPIRACIÓN TÁCTICA */
+        .seccion-respiracion {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .circulo-respiracion-contenedor {
+            width: 100px;
+            height: 100px;
+            margin: 12px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circulo-respiracion {
+            width: 40px;
+            height: 40px;
+            background: #38bdf8;
+            border-radius: 50%;
+            opacity: 0.8;
+            box-shadow: 0 0 20px #38bdf8;
+            transition: transform 3.8s linear, opacity 3.8s ease;
+        }
+
+        .circulo-respiracion.inhala {
+            transform: scale(2.2);
+            opacity: 1;
+        }
+
+        .circulo-respiracion.exhala {
+            transform: scale(0.9);
+            opacity: 0.4;
+        }
+
+        .btn-respiracion {
+            background: transparent;
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* PESTAÑA 2: RECOMENDACIONES */
+        .grupo-campo { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #334155; font-size: 0.9rem; }
+        select { width: 100%; padding: 10px; font-size: 0.95rem; border: 2px solid var(--borde-suave); border-radius: 8px; outline: none; background: #fff; }
+
+        .opciones-nivel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .boton-nivel { padding: 10px; border: 2px solid var(--borde-suave); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 700; font-size: 0.85rem; text-align: center; }
+        .boton-nivel[data-nivel="amarillo"].activo { background-color: var(--bg-amarillo); border-color: var(--border-amarillo); color: var(--color-amarillo); }
+        .boton-nivel[data-nivel="naranja"].activo { background-color: var(--bg-naranja); border-color: var(--border-naranja); color: var(--color-naranja); }
+        .boton-nivel[data-nivel="rojo"].activo { background-color: var(--bg-rojo); border-color: var(--border-rojo); color: var(--color-rojo); }
+
+        .pestanas-fase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background-color: #f1f5f9; padding: 4px; border-radius: 8px; }
+        .boton-fase { padding: 8px; border: none; border-radius: 6px; background: transparent; font-weight: 600; font-size: 0.85rem; color: var(--color-secundario); cursor: pointer; }
+        .boton-fase.activo { background-color: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        .encabezado-alerta { padding: 14px; border-radius: 8px; margin-bottom: 16px; font-weight: 700; }
+        .encabezado-alerta.amarillo { background-color: var(--bg-amarillo); color: var(--color-amarillo); border: 1px solid var(--border-amarillo); }
+        .encabezado-alerta.naranja { background-color: var(--bg-naranja); color: var(--color-naranja); border: 1px solid var(--border-naranja); }
+        .encabezado-alerta.rojo { background-color: var(--bg-rojo); color: var(--color-rojo); border: 1px solid var(--border-rojo); }
+
+        .lista-recomendaciones { list-style: none; }
+        .lista-recomendaciones li { position: relative; padding-left: 24px; margin-bottom: 10px; font-size: 0.95rem; }
+        .lista-recomendaciones li::before { content: "✓"; position: absolute; left: 0; font-weight: bold; color: #0284c7; }
+
+        /* PESTAÑA 3: PLAN FAMILIAR */
+        .progreso-contenedor { background-color: #e2e8f0; border-radius: 20px; height: 10px; width: 100%; margin-bottom: 16px; overflow: hidden; }
+        .progreso-barra { background-color: var(--color-exito); height: 100%; width: 0%; transition: width 0.3s; }
+        .elemento-checklist { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--borde-suave); border-radius: 8px; margin-bottom: 10px; background: #f8fafc; }
+        .elemento-checklist input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; }
+        .elemento-checklist label { font-weight: 500; font-size: 0.9rem; }
+        .elemento-checklist small { display: block; color: var(--color-secundario); font-size: 0.8rem; margin-top: 2px; }
+
+        .contenedor-acciones { display: flex; gap: 10px; margin-top: 15px; }
+        .boton-accion { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; text-align: center; }
+        .boton-imprimir { background: #0284c7; color: #fff; }
+        .boton-descargar { background: #059669; color: #fff; }
+
+        footer { text-align: center; padding: 16px; font-size: 0.85rem; color: var(--color-secundario); margin-top: 20px; }
+
+        @media (max-width: 600px) {
+            .pestanas-principales, .opciones-nivel, .pestanas-fase, .contenedor-acciones { flex-direction: column; grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-principal">
+        <header>
+            <span class="insignia-institucional">IIARRD - Instituto Interamericano para la Reducción del Riesgo de Desastres</span>
+            <h1>Plataforma de Percepción de Riesgos y Plan Familiar</h1>
+            <p>Traducción sensorial de niveles de alerta y autoprotección comunitaria.</p>
+            
+            <div class="nota-interamericana">
+                <strong>🌎 Alcance Regional:</strong> Los niveles de alerta (Amarillo, Naranja y Rojo) constituyen un marco universal de concienciación. Los valores numéricos de referencia exhibidos corresponden al Servicio Meteorológico Nacional (SMN) de Argentina como modelo técnico[cite: 1], pero las recomendaciones y la experiencia sensorial son totalmente adaptables a los sistemas de alertas de tu localidad o país.
+            </div>
+        </header>
+
+        <nav class="pestanas-principales">
+            <button class="boton-seccion activo" onclick="mostrarSeccion('laboratorio')">1. Laboratorio Sensorial</button>
+            <button class="boton-seccion" onclick="mostrarSeccion('alertas')">2. Guía de Alertas</button>
+            <button class="boton-seccion" onclick="mostrarSeccion('plan')">3. Plan Familiar (8 Puntos)</button>
+        </nav>
+
+        <!-- PESTAÑA 1: LABORATORIO MULTIAMENAZA -->
+        <div id="seccion-laboratorio" class="bloque-contenido activo">
+            <div class="visor-sensorial">
+                <h2>Laboratorio Multiamenaza de Percepción</h2>
+                
+                <div class="grupo-campo" style="margin-top: 15px; text-align: left;">
+                    <label style="color: #cbd5e1;">Seleccioná la amenaza a experimentar:</label>
+                    <select id="labAmenazaSelect" onchange="cambiarAmenazaLab()">
+                        <option value="lluvia">💧 Lluvias Acumuladas</option>
+                        <option value="tormenta">⚡ Tormentas Fuertes (Actividad Eléctrica)</option>
+                        <option value="viento">🍃 Viento e Intensidad de Ráfagas</option>
+                        <option value="nieve">❄️ Nevadas e Imposibilidad de Desplazamiento</option>
+                        <option value="calor">🌡️ Ola de Calor (Estrés Térmico)</option>
+                    </select>
+                </div>
+
+                <div class="selector-alertas-laboratorio">
+                    <button class="btn-lab btn-lab-amarillo activo" onclick="setLaboratorioNivel('amarillo')">AMARILLO</button>
+                    <button class="btn-lab btn-lab-naranja" onclick="setLaboratorioNivel('naranja')">NARANJA</button>
+                    <button class="btn-lab btn-lab-rojo" onclick="setLaboratorioNivel('rojo')">ROJO</button>
+                </div>
+
+                <div class="visualizador-contenedor" id="labVisualizerBox">
+                    <svg class="silueta-humana" id="labSilueta" viewBox="0 0 24 24" fill="none" stroke="#f8fafc" stroke-width="1.5">
+                        <path d="M12 2a2 2 0 100 4 2 2 0 000-4zM10 7h4a2 2 0 012 2v5h-2v8h-4v-8H8V9a2 2 0 012-2z"/>
+                    </svg>
+                    <div class="capa-fluido" id="labFluidoLayer" style="height: 15%;"></div>
+                </div>
+
+                <!-- BLOQUE EXPLICATIVO DE MÉTRICAS PEDAGÓGICAS -->
+                <div style="text-align: left; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5;">
+                    <p style="margin-bottom: 6px;">
+                        <strong>📏 Referencia Técnica:</strong> 
+                        <span id="labUmbral">30 mm en 12 horas (Modelo Ref: SMN Argentina)</span>[cite: 1]
+                    </p>
+
+                    <p style="margin-bottom: 6px; color: #38bdf8;">
+                        <strong>🪣 Escala Individual (Superficie):</strong> 
+                        <span id="labVolumen">30 Litros por m² (~3 baldes de limpieza en un piso de 1x1 m).</span>
+                    </p>
+
+                    <p style="margin-bottom: 6px; color: #fdba74;">
+                        <strong>🏠 Escala Hogar (Techo):</strong> 
+                        <span id="labCasa">Equivale a volcar 6 tanques de agua (de 500 L) sobre el techo de una casa típica de 100 m².</span>
+                    </p>
+
+                    <p style="margin-bottom: 0;">
+                        <strong>🚶 Escala Corporal / Entorno:</strong> 
+                        <span id="labCuerpo">El agua cubre el calzado y anega el cordón de la vereda.</span>
+                    </p>
+                </div>
+
+                <div class="audio-controls">
+                    <span>🔊 Archivo de Servidor: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia (Amarillo)</strong></span>
+                    <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
+                </div>
+
+                <!-- REPRODUCTOR NATIVO PARA SERVIDORES -->
+                <audio id="reproductorAudioReal" loop preload="auto"></audio>
+
+                <div class="holistic-box" id="labHolisticBox">
+                    <h4 id="labHTitle">Estado: Observación y Orden</h4>
+                    <p id="labHText">Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal.</p>
+                </div>
+
+                <!-- SECCIÓN DE AUTORREGULACIÓN: RESPIRACIÓN TÁCTICA -->
+                <div class="seccion-respiracion">
+                    <h3 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 4px;">🧘 Ejercicio de Anclaje: Respiración Táctica (4-4-4-4)</h3>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">Antes de tomar cualquier decisión de respuesta, regula tu sistema nervioso para mantener la lucidez.</p>
+                    
+                    <div class="circulo-respiracion-contenedor">
+                        <div class="circulo-respiracion" id="circuloBreathing"></div>
+                    </div>
+                    
+                    <div id="textoRespiracion" style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; height: 20px; margin-bottom: 8px;">
+                        Presiona Iniciar para sincronizar
+                    </div>
+
+                    <button class="btn-respiracion" id="btnIniciarBreathing" onclick="toggleRespiracion()">Iniciar Guía de Respiración</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: GUÍA DE RECOMENDACIONES -->
+        <div id="seccion-alertas" class="bloque-contenido">
+            <div class="seccion-tarjeta">
+                <div class="grupo-campo">
+                    <label for="tipo-amenaza">Seleccioná la amenaza meteorológica:</label>
+                    <select id="tipo-amenaza">
+                        <option value="lluvia">Lluvias acumuladas</option>
+                        <option value="tormenta">Tormentas fuertes</option>
+                        <option value="viento">Vientos intensos / Ráfagas</option>
+                        <option value="nieve">Nevadas / Hielo</option>
+                        <option value="calor">Ola de calor</option>
+                    </select>
+                </div>
+
+                <div class="grupo-campo">
+                    <label>Nivel de alerta emitido:</label>
+                    <div class="opciones-nivel">
+                        <button type="button" class="boton-nivel activo" data-nivel="amarillo">AMARILLO<br><small>(Precaución)</small></button>
+                        <button type="button" class="boton-nivel" data-nivel="naranja">NARANJA<br><small>(Preparación)</small></button>
+                        <button type="button" class="boton-nivel" data-nivel="rojo">ROJO<br><small>(Acción)</small></button>
+                    </div>
+                </div>
+
+                <div class="grupo-campo">
+                    <label>Momento del evento:</label>
+                    <div class="pestanas-fase">
+                        <button type="button" class="boton-fase activo" data-fase="antes">Antes (Prevención)</button>
+                        <button type="button" class="boton-fase" data-fase="durante">Durante (Respuesta)</button>
+                        <button type="button" class="boton-fase" data-fase="despues">Después (Recuperación)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="seccion-tarjeta">
+                <div id="cartel-alerta" class="encabezado-alerta amarillo">
+                    <span id="texto-cartel">ALERTA AMARILLA: Informate y tomá precauciones.</span>
+                </div>
+
+                <ul id="lista-acciones" class="lista-recomendaciones"></ul>
+
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--borde-suave);">
+                    <h3 style="font-size: 1rem; color: #334155; margin-bottom: 8px;">Cuidado de Mascotas</h3>
+                    <ul id="lista-mascotas" class="lista-recomendaciones"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: PLAN FAMILIAR CHECKLIST -->
+        <div id="seccion-plan" class="bloque-contenido">
+            <div class="seccion-tarjeta">
+                <h2 style="font-size: 1.2rem; margin-bottom: 6px;">Lista de Verificación: Plan de Emergencia Familiar</h2>
+                <p style="color: var(--color-secundario); font-size: 0.85rem; margin-bottom: 15px;">Marcá los puntos a medida que los completes en tu hogar.</p>
+
+                <div class="progreso-contenedor">
+                    <div id="barra-progreso" class="progreso-barra"></div>
+                </div>
+
+                <ul style="list-style: none;">
+                    <li class="elemento-checklist"><input type="checkbox" id="p1" onchange="actualizarProgreso()"><label for="p1">1. Identificación de amenazas locales y zonas vulnerables<small>Reconocer si la zona se inunda o sufre voladuras de techos.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p2" onchange="actualizarProgreso()"><label for="p2">2. Punto de encuentro familiar definido<small>Fijar dos puntos de reunión: uno cerca del hogar y otro fuera del barrio.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p3" onchange="actualizarProgreso()"><label for="p3">3. Cadena de contactos de emergencia<small>Anotar teléfonos de Defensa Civil, Bomberos, Salud y un familiar lejano.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p4" onchange="actualizarProgreso()"><label for="p4">4. Mochila de emergencia preparada (72 horas)<small>Agua potable, alimentos no perecederos, linterna, radio a pilas y botiquín.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p5" onchange="actualizarProgreso()"><label for="p5">5. Documentos importantes resguardados<small>DNI, escrituras y llaves en bolsas plásticas herméticas.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p6" onchange="actualizarProgreso()"><label for="p6">6. Ubicación y corte de suministros<small>Saber cómo cortar luz, gas y agua potable rápidamente.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p7" onchange="actualizarProgreso()"><label for="p7">7. Plan de evacuación para mascotas<small>Tener correa, bozal, transportadora y alimento identificado.</small></label></li>
+                    <li class="elemento-checklist"><input type="checkbox" id="p8" onchange="actualizarProgreso()"><label for="p8">8. Simulacro y revisión periódica<small>Repasar el protocolo cada 6 meses con la familia.</small></label></li>
+                </ul>
+
+                <div class="contenedor-acciones">
+                    <button class="boton-accion boton-imprimir" onclick="window.print()">Imprimir / PDF</button>
+                    <button class="boton-accion boton-descargar" onclick="descargarListaTexto()">Exportar (.txt)</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Desarrollado como una herramienta pública de concienciación por el <strong>IIARRD (Instituto Interamericano para la Reducción del Riesgo de Desastres)</strong>. Valores de referencia meteorológica tomados del Servicio Meteorológico Nacional (SMN) de Argentina[cite: 1].</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- NAVEGACIÓN ENTRE PESTAÑAS ---
+        function mostrarSeccion(id) {
+            document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
+            document.querySelectorAll('.bloque-contenido').forEach(c => c.classList.remove('activo'));
+            
+            if(id === 'laboratorio') {
+                document.querySelectorAll('.boton-seccion')[0].classList.add('activo');
+                document.getElementById('seccion-laboratorio').classList.add('activo');
+            } else if(id === 'alertas') {
+                document.querySelectorAll('.boton-seccion')[1].classList.add('activo');
+                document.getElementById('seccion-alertas').classList.add('activo');
+            } else {
+                document.querySelectorAll('.boton-seccion')[2].classList.add('activo');
+                document.getElementById('seccion-plan').classList.add('activo');
+            }
+        }
+
+        // --- RESPIRACIÓN TÁCTICA ---
+        let breathingTimer = null;
+        let isBreathingActive = false;
+        let breathingPhase = 0;
+
+        function runBreathingCycle() {
+            const circulo = document.getElementById('circuloBreathing');
+            const txt = document.getElementById('textoRespiracion');
+
+            if (breathingPhase === 0) {
+                txt.innerText = "1. INHALA por la nariz (4s)...";
+                circulo.className = "circulo-respiracion inhala";
+                breathingPhase = 1;
+            } else if (breathingPhase === 1) {
+                txt.innerText = "2. RETÉN con aire (4s)...";
+                breathingPhase = 2;
+            } else if (breathingPhase === 2) {
+                txt.innerText = "3. EXHALA por la boca (4s)...";
+                circulo.className = "circulo-respiracion exhala";
+                breathingPhase = 3;
+            } else if (breathingPhase === 3) {
+                txt.innerText = "4. PAUSA sin aire (4s)...";
+                breathingPhase = 0;
+            }
+        }
+
+        function toggleRespiracion() {
+            const btn = document.getElementById('btnIniciarBreathing');
+            const txt = document.getElementById('textoRespiracion');
+            const circulo = document.getElementById('circuloBreathing');
+
+            if (isBreathingActive) {
+                clearInterval(breathingTimer);
+                isBreathingActive = false;
+                btn.innerText = "Iniciar Guía de Respiración";
+                txt.innerText = "Presiona Iniciar para sincronizar";
+                circulo.className = "circulo-respiracion";
+                breathingPhase = 0;
+            } else {
+                isBreathingActive = true;
+                btn.innerText = "Detener Guía";
+                breathingPhase = 0;
+                runBreathingCycle();
+                breathingTimer = setInterval(runBreathingCycle, 4000);
+            }
+        }
+
+        // --- MANEJO DE AUDIOS LOCALES / EN SERVIDORES ---
+        let isAudioPlaying = false;
+        let labAmenazaActual = 'lluvia';
+        let labNivelActual = 'amarillo';
+
+        const audioPlayer = document.getElementById('reproductorAudioReal');
+
+        function playServerAudio() {
+            // Ruta interna a tu carpeta 'sonidos/'
+            const rutaAudio = `sonidos/${labAmenazaActual}_${labNivelActual}.mp3`;
+            
+            const nombres = {
+                lluvia: 'Lluvia Acumulada',
+                tormenta: 'Tormenta Eléctrica',
+                viento: 'Vendaval y Ráfagas',
+                nieve: 'Ventisca de Nieve',
+                calor: 'Ambiente de Verano'
+            };
+            
+            document.getElementById('nombreSonido').innerText = `${nombres[labAmenazaActual]} (${labNivelActual.toUpperCase()})`;
+
+            if (audioPlayer.src !== window.location.origin + '/' + rutaAudio && audioPlayer.src !== rutaAudio) {
+                audioPlayer.src = rutaAudio;
+            }
+
+            // ELEVACIÓN DE NIVEL DE VOLUMEN SEGÚN ALERTA
+            // Amarillo: 35% | Naranja: 70% | Rojo: 100% (Máxima intensidad)
+            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.70 : 1.0);
+
+            audioPlayer.play().then(() => {
+                isAudioPlaying = true;
+                document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
+            }).catch(err => {
+                console.log("Esperando interacción o verificando archivo MP3 en servidor:", err);
+            });
+        }
+
+        function stopServerAudio() {
+            audioPlayer.pause();
+            isAudioPlaying = false;
+            document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
+        }
+
+        function toggleAudio() {
+            if (isAudioPlaying) {
+                stopServerAudio();
+            } else {
+                playServerAudio();
+            }
+        }
+
+        function updateAudioState() {
+            if (isAudioPlaying) {
+                playServerAudio();
+            }
+        }
+
+        // --- BASE DE DATOS MULTIAMENAZA Y UMBRALES SMN ---
+        const baseMultiamenazaLab = {
+            lluvia: {
+                amarillo: {
+                    umbral: "30 mm en 12 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "30 Litros por m² (~3 baldes de limpieza en un piso de 1x1 m).",
+                    casa: "Equivale a volcar 6 tanques de agua (de 500 L) sobre el techo de una casa típica de 100 m².",
+                    cuerpo: "El agua cubre el calzado y anega el cordón de la vereda.",
+                    color: "#d97706", height: "18%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Observación y Orden",
+                    hText: "Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal."
+                },
+                naranja: {
+                    umbral: "60 mm en 12 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "60 Litros por m² (~6 baldes de limpieza llenos por cada metro cuadrado).",
+                    casa: "Equivale a volcar 12 tanques de agua hogareños (de 500 L) sobre el techo de una casa de 100 m².",
+                    cuerpo: "El agua supera la vereda y llega a la mitad de la pantorrilla/rodilla (20 a 40 cm).",
+                    color: "#ea580c", height: "45%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Alerta Enfocada y Red",
+                    hText: "Regulación del sistema nervioso. Chequeá vecinos o familiares vulnerables. Elevá objetos de valor del suelo y evitá circular."
+                },
+                rojo: {
+                    umbral: "125 mm en 24 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "125 Litros por m² (~12 baldes de agua por cada metro cuadrado).",
+                    casa: "Equivale a volcar más de 25 tanques de agua (de 500 L) sobre el techo de tu casa en un solo día.",
+                    cuerpo: "El agua supera el ingreso a viviendas (+50 cm) y desplaza vehículos.",
+                    color: "#dc2626", height: "80%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Presencia Absoluta y Calma",
+                    hText: "Centramiento interior para tomar decisiones lúcidas. Cortá suministros eléctricos si ingresa agua y buscá zonas elevadas."
+                }
+            },
+            tormenta: {
+                amarillo: {
+                    umbral: "30 mm en 12 horas con ráfagas e intensa actividad eléctrica[cite: 1]",
+                    volumen: "30 Litros por m² acompañados de descargas eléctricas lejanas.",
+                    casa: "Riesgo de sobretensión eléctrica en electrodomésticos y caídas de ramas.",
+                    cuerpo: "Sobresalto perceptivo por truenos e impactos repentinos de agua.",
+                    color: "#d97706", height: "20%", transform: "rotate(0deg)", bgVisor: "#090d16",
+                    hTitle: "Estado: Resguardo Eléctrico",
+                    hText: "Desconectá equipos electrónicos no indispensables. Permanecé en el interior de edificaciones firmes."
+                },
+                naranja: {
+                    umbral: "50 mm en 12 horas con granizo y ráfagas severas[cite: 1]",
+                    volumen: "50 Litros por m² con caída eventual de granizo e impactos concentrados.",
+                    casa: "Riesgo de rotura de cristales y voladura de objetos sueltos en balcones o patios.",
+                    cuerpo: "Pérdida de visibilidad al conducir y riesgo en la intemperie por granizo.",
+                    color: "#ea580c", height: "50%", transform: "rotate(0deg)", bgVisor: "#111827",
+                    hTitle: "Estado: Alejamiento de Riesgos Físicos",
+                    hText: "Alejate de ventanas y postigos. Resguardá vehículos bajo techos firmes y suspendé la circulación."
+                },
+                rojo: {
+                    umbral: "100 mm en 24 horas con tormentas severas continuas[cite: 1]",
+                    volumen: "100 Litros por m² cayendo en picos torrenciales sostenidos.",
+                    casa: "Saturación de techos, anegamientos severos e interrupción de servicios.",
+                    cuerpo: "Riesgo extremo de electrocución en vía pública y arrastre por corrientes.",
+                    color: "#dc2626", height: "85%", transform: "rotate(0deg)", bgVisor: "#1f1315",
+                    hTitle: "Estado: Protección de la Vida",
+                    hText: "Corta la energía eléctrica si hay ingreso de agua. Mantener la calma y no salir a la intemperie bajo ningún concepto."
+                }
+            },
+            viento: {
+                amarillo: {
+                    umbral: "Sostenido 65 km/h | Ráfagas 110 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Fuerza equivalente a un auto circulando a velocidad en avenida empujando tu cuerpo.",
+                    casa: "Presión continua sobre techos livianos, chapas y ventanales expuestos.",
+                    cuerpo: "Resistencia clara al caminar; movimiento constante de copas de árboles y marquesinas.",
+                    color: "#d97706", height: "0%", transform: "rotate(5deg)", bgVisor: "#0f172a",
+                    hTitle: "Estado: Fijación y Resguardo",
+                    hText: "Atención activa. Asegurá elementos sueltos en balcones o patios (chapas, macetas) antes de que las ráfagas se intensifiquen."
+                },
+                naranja: {
+                    umbral: "Sostenido 110 km/h | Ráfagas 150 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Fuerza de empuje capaz de quebrar ramas gruesas y desplazar contenedores pesados.",
+                    casa: "Riesgo de desprendimiento de estructuras no fijadas correctamente.",
+                    cuerpo: "Dificultad severa para mantenerse erguido al aire libre; peligro por objetos volantes.",
+                    color: "#ea580c", height: "0%", transform: "rotate(15deg)", bgVisor: "#1e1b4b",
+                    hTitle: "Estado: Refugio Inmóvil",
+                    hText: "Mantenete alejado de ventanas y superficies vidriadas. Resguardá vehículos bajo techo firme y evitá la vía pública."
+                },
+                rojo: {
+                    umbral: "Sostenido >150 km/h | Ráfagas >185 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Fuerza destructiva con capacidad de colapso de techos e infraestructura.",
+                    casa: "Exposición extrema en cubiertas de chapa y cartelería exterior.",
+                    cuerpo: "Imposibilidad total de permanecer a pie; desplazamiento peligroso de estructuras.",
+                    color: "#dc2626", height: "0%", transform: "rotate(28deg)", bgVisor: "#311212",
+                    hTitle: "Estado: Anclaje y Protección Estructural",
+                    hText: "Ubicáte en la habitación más interna de la vivienda (pasillos o baños sin ventanas). Mantener la respiración pausada en grupo."
+                }
+            },
+            nieve: {
+                amarillo: {
+                    umbral: "20 - 30 cm de nieve / 30 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Masa acumulada que cubre por completo el calzado común.",
+                    casa: "Peso liviano a moderado sobre cubiertas y acumulaciones en canaletas.",
+                    cuerpo: "Oculta grietas o desniveles del terreno; reduce la tracción al caminar.",
+                    color: "#d97706", height: "20%", transform: "rotate(0deg)", bgVisor: "#0f172a",
+                    hTitle: "Estado: Aislamiento Preventivo",
+                    hText: "Despejá accesos principales antes de que se congelen. Mantené reservas de abrigo y alimentos calientes a mano."
+                },
+                naranja: {
+                    umbral: "50 - 60 cm de nieve / 60 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Acumulación que supera las rodillas; inmoviliza vehículos sin cadenas.",
+                    casa: "Sobrecarga de peso en techos planos y congestión en tuberías de gas/agua.",
+                    cuerpo: "Desplazamiento a pie sumamente agotador; riesgo de hipotermia si hay humedad.",
+                    color: "#ea580c", height: "55%", transform: "rotate(0deg)", bgVisor: "#1e293b",
+                    hTitle: "Estado: Conservación Térmica",
+                    hText: "Evitá cualquier desplazamiento interurbano. Racionalizá la energía y mantené una ventilación mínima si usás estufas a combustión."
+                },
+                rojo: {
+                    umbral: "80 - 90 cm de nieve / 120 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    volumen: "Sepultura parcial de vehículos y bloqueo total de accesos exteriores.",
+                    casa: "Riesgo estructural por acumulación masiva de peso seco/húmedo.",
+                    cuerpo: "Imposibilidad de caminar por encima de la cintura. Aislamiento físico total.",
+                    color: "#dc2626", height: "85%", transform: "rotate(0deg)", bgVisor: "#334155",
+                    hTitle: "Estado: Calma y Autocontención",
+                    hText: "Aguardá la asistencia de despejadoras o rescate oficial. Mantené la temperatura corporal mediante capas de ropa secas."
+                }
+            },
+            calor: {
+                amarillo: {
+                    umbral: "Alerta Nivel Amarillo por Temperatura Extrema (SMN)",
+                    volumen: "Pérdida pasiva de 0.5 a 1 litro de agua corporal por hora a la sombra.",
+                    casa: "Acumulación de calor en paredes y techos sin aislación térmica.",
+                    cuerpo: "Sensación de pesadez corporal y ligera aceleración del pulso en reposo.",
+                    color: "#d97706", height: "100%", transform: "rotate(0deg)", bgVisor: "#451a03",
+                    hTitle: "Estado: Hidratación Consciente",
+                    hText: "Bebé agua de manera continua sin esperar a tener sed. Bajá el ritmo de las actividades en las horas centrales del día."
+                },
+                naranja: {
+                    umbral: "Alerta Nivel Naranja por Temperatura Extrema (SMN)",
+                    volumen: "Elevado estrés térmico. Exposición al sol genera riesgo de insolación.",
+                    casa: "Ambientes cerrados concentran temperaturas superiores al exterior.",
+                    cuerpo: "Vasodilatación, sudoración copiosa, mareos leves y cansancio generalizado.",
+                    color: "#ea580c", height: "100%", transform: "rotate(0deg)", bgVisor: "#7c2d12",
+                    hTitle: "Estado: Enfriamiento y Cuidado de Vulnerables",
+                    hText: "Permanecé en los espacios más frescos del hogar. Aplicá paños húmedos en nuca y muñecas. Monitoreá a niños y adultos mayores."
+                },
+                rojo: {
+                    umbral: "Alerta Nivel Rojo por Temperatura Extrema (SMN)",
+                    volumen: "Temperatura ambiental cercana o superior a la corporal (37°C).",
+                    casa: "Saturación térmica; dificultad para refrigerar espacios sin climatización.",
+                    cuerpo: "Riesgo inminente de Golpe de Calor. El cuerpo pierde la capacidad de autorregular su temperatura.",
+                    color: "#dc2626", height: "100%", transform: "rotate(0deg)", bgVisor: "#991b1b",
+                    hTitle: "Estado: Pausa Absoluta y Asistencia",
+                    hText: "Evitá por completo cualquier esfuerzo físico. Si detectás confusión, piel roja/seca o fiebre alta, solicitá atención médica urgente."
+                }
+            }
+        };
+
+        function renderLaboratorio() {
+            const data = baseMultiamenazaLab[labAmenazaActual][labNivelActual];
+            const fluido = document.getElementById('labFluidoLayer');
+            const silueta = document.getElementById('labSilueta');
+            const visorBox = document.getElementById('labVisualizerBox');
+
+            fluido.style.height = data.height;
+            silueta.style.transform = data.transform;
+            visorBox.style.backgroundColor = data.bgVisor;
+
+            if(labAmenazaActual === 'nieve') {
+                fluido.style.background = 'linear-gradient(180deg, rgba(241, 245, 249, 0.9) 0%, rgba(203, 213, 225, 0.95) 100%)';
+            } else if(labAmenazaActual === 'calor') {
+                fluido.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.6) 100%)';
+            } else {
+                fluido.style.background = 'linear-gradient(180deg, rgba(56, 189, 248, 0.7) 0%, rgba(14, 165, 233, 0.95) 100%)';
+            }
+
+            document.getElementById('labUmbral').innerText = data.umbral;
+            document.getElementById('labVolumen').innerText = data.volumen;
+            document.getElementById('labCasa').innerText = data.casa;
+            document.getElementById('labCuerpo').innerText = data.cuerpo;
+            document.getElementById('labHTitle').innerText = data.hTitle;
+            document.getElementById('labHText').innerText = data.hText;
+            document.documentElement.style.setProperty('--alert-active-color', data.color);
+
+            updateAudioState();
+        }
+
+        function cambiarAmenazaLab() {
+            labAmenazaActual = document.getElementById('labAmenazaSelect').value;
+            renderLaboratorio();
+        }
+
+        function setLaboratorioNivel(nivel) {
+            document.querySelectorAll('.btn-lab').forEach(b => b.classList.remove('activo'));
+            document.querySelector(`.btn-lab-${nivel}`).classList.add('activo');
+            labNivelActual = nivel;
+            renderLaboratorio();
+        }
+
+        // --- RECOMENDACIONES POR ALERTA (PESTAÑA 2) ---
+        const datosRecomendaciones = {
+            lluvia: {
+                amarillo: {
+                    antes: ["Limpiá canaletas, desagües y rejillas (Ref. SMN: 30 mm/12 h)[cite: 1].", "Revisá que ventanas y puertas cierren correctamente.", "Evitá sacar la basura para no obstruir sumideros."],
+                    durante: ["Evitá salir de tu vivienda salvo necesidad.", "Manejá con precaución y reducí la velocidad."],
+                    despues: ["Ventilá las zonas húmedas.", "Retirá hojas acumuladas."]
+                },
+                naranja: {
+                    antes: ["Resguardá objetos del patio o balcón (Ref. SMN: 60 mm/12 h)[cite: 1].", "Tené lista la mochila de emergencia con documentos resguardados."],
+                    durante: ["Permanecé en un lugar seguro.", "No toques postes de luz ni cables caídos."],
+                    despues: ["Inspeccioná la vivienda antes de encender artefactos eléctricos."]
+                },
+                rojo: {
+                    antes: ["Desconectá suministros de luz y gas si el agua sube (Ref. SMN: 125 mm/24 h)[cite: 1].", "Llevá elementos de valor a zonas elevadas."],
+                    durante: ["Evacuá si las autoridades locales así lo indican.", "No cruces corrientes de agua bajo ningún concepto."],
+                    despues: ["Regresá solo cuando la autoridad lo declare seguro."]
+                }
+            },
+            tormenta: {
+                amarillo: {
+                    antes: ["Asegurá objetos sueltos en balcones.", "Cargá dispositivos de comunicación."],
+                    durante: ["Permanecé dentro de construcciones firmes.", "Desconectá aparatos sensibles."],
+                    despues: ["Constatá que la instalación eléctrica no presente fallas."]
+                },
+                naranja: {
+                    antes: ["Desconectá electrodomésticos.", "Resguardá el vehículo bajo techo firme."],
+                    durante: ["Alejate de estructuras metálicas y árboles aislados."],
+                    despues: ["Circulá con precaución ante postes caídos."]
+                },
+                rojo: {
+                    antes: ["Cortá los suministros generales.", "Ubicáte en la habitación más central del inmueble."],
+                    durante: ["No salgas a la intemperie bajo ninguna circunstancia."],
+                    despues: ["Aguardá indicaciones oficiales para tareas exteriores."]
+                }
+            },
+            viento: {
+                amarillo: {
+                    antes: ["Asegurá chapas, macetas y elementos sueltos (Ref. SMN: 65 km/h)[cite: 1]."],
+                    durante: ["Evitá circular cerca de árboles grandes o carteles."],
+                    despues: ["Verificá la estabilidad de muros y techos."]
+                },
+                naranja: {
+                    antes: ["Reforzá las fijaciones de techos livianos (Ref. SMN: 110 km/h)[cite: 1]."],
+                    durante: ["Suspendé trabajos en altura.", "Permanecé alejado de cristales."],
+                    despues: ["No toques cables derribados."]
+                },
+                rojo: {
+                    antes: ["Asegurá accesos y refugiá a la familia (Ref. SMN: 150 km/h)[cite: 1]."],
+                    durante: ["Ubicáte en pasillos o baños sin ventanas."],
+                    despues: ["Esperá a que amaine completamente antes de salir."]
+                }
+            },
+            nieve: {
+                amarillo: {
+                    antes: ["Verificá aislamiento de tuberías (Ref. SMN: 30 mm equiv./12 h)[cite: 1]."],
+                    durante: ["Circulá con cadenas en las ruedas."],
+                    despues: ["Despejá la nieve acumulada en veredas."]
+                },
+                naranja: {
+                    antes: ["Evitá desplazamientos interurbanos."],
+                    durante: ["Mantené el auto encendido a intervalos con ventana entreabierta si quedás atrapado."],
+                    despues: ["Caminá con cuidado sobre el hielo."]
+                },
+                rojo: {
+                    antes: ["Permanecé aislado y racionalizá la energía."],
+                    durante: ["No intentes caminar en medio de ventiscas."],
+                    despues: ["Aguardá a las máquinas despejadoras."]
+                }
+            },
+            calor: {
+                amarillo: {
+                    antes: ["Ventilá la casa durante las horas más frescas.", "Asegurá reservas de agua potable."],
+                    durante: ["Tomá agua con frecuencia sin esperar a tener sed.", "Evitá exposición directa al sol entre las 10 y 16 hs."],
+                    despues: ["Mantené comidas livianas y buena hidratación."]
+                },
+                naranja: {
+                    antes: ["Cerrá persianas en fachadas expuestas al sol."],
+                    durante: ["Usá ropa clara y de algodón.", "Ofrecé agua permanentemente a niños y adultos mayores."],
+                    despues: ["Vigilá síntomas como dolor de cabeza o mareos."]
+                },
+                rojo: {
+                    antes: ["Identificá centros de salud cercanos y evitá esfuerzos físicos."],
+                    durante: ["Permanecé en los ambientes más frescos o climatizados.", "Aplicá paños húmedos si sentís calor excesivo."],
+                    despues: ["Ante confusión o fiebre alta, solicitá emergencias de inmediato."]
+                }
+            }
+        };
+
+        const recomendacionesMascotas = {
+            amarillo: ["Ingresá a tus mascotas al interior de la vivienda.", "Asegurate de que tengan agua fresca y alimento resguardado."],
+            naranja: ["Mantené a los perros con collar, correa e identificación.", "Ubicá a los gatos en transportadoras o habitaciones cerradas."],
+            rojo: ["Si debés evacuar, llevá a tus mascotas con su alimento y kit básico.", "Jamás dejes a los animales atados o encerrados sin posibilidad de escape."]
+        };
+
+        let nivelSeleccionado = 'amarillo';
+        let faseSeleccionada = 'antes';
+
+        function actualizarVistaRecomendaciones() {
+            const amenaza = document.getElementById('tipo-amenaza').value;
+            const cartel = document.getElementById('cartel-alerta');
+            const texto = document.getElementById('texto-cartel');
+
+            cartel.className = `encabezado-alerta ${nivelSeleccionado}`;
+            texto.innerText = nivelSeleccionado === 'amarillo' ? 'ALERTA AMARILLA: Informate y tomá precauciones.' : (nivelSeleccionado === 'naranja' ? 'ALERTA NARANJA: Preparate y tené lista la respuesta.' : 'ALERTA ROJA: Tomá acción inmediata y protegé la vida.');
+
+            const acciones = datosRecomendaciones[amenaza][nivelSeleccionado][faseSeleccionada];
+            document.getElementById('lista-acciones').innerHTML = acciones.map(i => `<li>${i}</li>`).join('');
+            document.getElementById('lista-mascotas').innerHTML = recomendacionesMascotas[nivelSeleccionado].map(i => `<li>${i}</li>`).join('');
+        }
+
+        document.getElementById('tipo-amenaza').addEventListener('change', actualizarVistaRecomendaciones);
+        document.querySelectorAll('.boton-nivel').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.boton-nivel').forEach(x => x.classList.remove('activo'));
+                b.classList.add('activo');
+                nivelSeleccionado = b.getAttribute('data-nivel');
+                actualizarVistaRecomendaciones();
+            });
+        });
+        document.querySelectorAll('.boton-fase').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.boton-fase').forEach(x => x.classList.remove('activo'));
+                b.classList.add('activo');
+                faseSeleccionada = b.getAttribute('data-fase');
+                actualizarVistaRecomendaciones();
+            });
+        });
+
+        // --- PLAN FAMILIAR CHECKLIST ---
+        function actualizarProgreso() {
+            const cbs = document.querySelectorAll('.elemento-checklist input[type="checkbox"]');
+            const marcados = Array.from(cbs).filter(c => c.checked).length;
+            document.getElementById('barra-progreso').style.width = `${(marcados / cbs.length) * 100}%`;
+        }
+
+        function descargarListaTexto() {
+            let txt = "PLAN DE EMERGENCIA FAMILIAR - IIARRD\n===================================\n\n";
+            document.querySelectorAll('.elemento-checklist').forEach(e => {
+                const cb = e.querySelector('input').checked ? "[COMPLETADO]" : "[PENDIENTE]";
+                txt += `${cb} ${e.querySelector('label').childNodes[0].textContent.trim()}\n   ${e.querySelector('small').textContent.trim()}\n\n`;
+            });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([txt], {type: 'text/plain;charset=utf-8'}));
+            a.download = 'Plan_Familiar_IIARRD.txt';
+            a.click();
+        }
+
+        // Inicializaciones
+        renderLaboratorio();
+        actualizarVistaRecomendaciones();
+    </script>
+</body>
+</html>
