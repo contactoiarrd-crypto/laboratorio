@@ -216,11 +216,6 @@
             flex-wrap: wrap;
         }
 
-        .botones-audio-grupo {
-            display: flex;
-            gap: 8px;
-        }
-
         .btn-audio {
             background: #38bdf8;
             color: #0f172a;
@@ -229,17 +224,6 @@
             border-radius: 6px;
             font-weight: 700;
             cursor: pointer;
-        }
-
-        .btn-trueno-manual {
-            background: #f59e0b;
-            color: #0f172a;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: 700;
-            cursor: pointer;
-            display: none;
         }
 
         .holistic-box {
@@ -377,7 +361,7 @@
                     <label style="color: #cbd5e1;">Seleccioná la amenaza a experimentar:</label>
                     <select id="labAmenazaSelect" onchange="cambiarAmenazaLab()">
                         <option value="lluvia">💧 Lluvias Acumuladas</option>
-                        <option value="tormenta">⚡ Tormentas Fuertes (Truenos, Rayos y Granizo)</option>
+                        <option value="tormenta">⚡ Tormentas Fuertes (Actividad Eléctrica)</option>
                         <option value="viento">🍃 Viento e Intensidad de Ráfagas</option>
                         <option value="nieve">❄️ Nevadas e Imposibilidad de Desplazamiento</option>
                         <option value="calor">🌡️ Ola de Calor (Estrés Térmico)</option>
@@ -422,12 +406,12 @@
 
                 <!-- CONTROLES DE AUDIO -->
                 <div class="audio-controls" id="bloqueAudioContainer">
-                    <span>🔊 Inmersión Sonora: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
-                    <div class="botones-audio-grupo">
-                        <button class="btn-trueno-manual" id="btnTruenoManual" onclick="dispararTruenoManual()">⚡ Rayo Ahora</button>
-                        <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
-                    </div>
+                    <span>🔊 Audio Real de Campo: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
+                    <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
                 </div>
+
+                <!-- REPRODUCTOR NATIVO SEGURO -->
+                <audio id="reproductorNativo" loop preload="auto"></audio>
 
                 <div class="holistic-box" id="labHolisticBox">
                     <h4 id="labHTitle">Estado: Observación y Orden</h4>
@@ -611,23 +595,20 @@
             document.getElementById('labHText').innerText = data.hText;
             document.documentElement.style.setProperty('--alert-active-color', data.color);
 
-            // Ajustar visualización del bloque de audio
             const bloqueAudio = document.getElementById('bloqueAudioContainer');
-            const btnManual = document.getElementById('btnTruenoManual');
             if (amenazasConAudio.includes(labAmenazaActual)) {
                 bloqueAudio.style.display = 'flex';
-                btnManual.style.display = labAmenazaActual === 'tormenta' ? 'inline-block' : 'none';
-                document.getElementById('nombreSonido').innerText = labAmenazaActual.toUpperCase();
+                document.getElementById('nombreSonido').innerText = `${labAmenazaActual.toUpperCase()} (${labNivelActual.toUpperCase()})`;
+                if (isAudioPlaying) startRealAudio();
             } else {
                 bloqueAudio.style.display = 'none';
-                stopSoundEngine();
+                stopRealAudio();
             }
         }
 
         function cambiarAmenazaLab() {
             labAmenazaActual = document.getElementById('labAmenazaSelect').value;
             renderLaboratorio();
-            if (isAudioPlaying) startSoundEngine();
         }
 
         function setLaboratorioNivel(nivel) {
@@ -635,7 +616,6 @@
             document.querySelector(`.btn-lab-${nivel}`).classList.add('activo');
             labNivelActual = nivel;
             renderLaboratorio();
-            if (isAudioPlaying) startSoundEngine();
         }
 
         // --- 3. RESPIRACIÓN TÁCTICA ---
@@ -686,152 +666,58 @@
             }
         }
 
-        // --- 4. MOTOR DE AUDIO BAJO DEMANDA (CERO RIESGO DE BLOQUEO) ---
-        let audioCtx = null;
-        let activeNodes = [];
-        let thunderTimer = null;
+        // --- 4. AUDIOS REALES RESTAURADOS (NATIVOS, ESTABLES Y SIN SÍNTESIS) ---
+        const bancoAudiosReales = {
+            lluvia: {
+                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/14/Rain_falling_on_leaves.ogg/Rain_falling_on_leaves.ogg.mp3",
+                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/18/Rain_on_a_tin_roof.ogg/Rain_on_a_tin_roof.ogg.mp3",
+                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a2/Heavy_rain_in_forest.ogg/Heavy_rain_in_forest.ogg.mp3"
+            },
+            tormenta: {
+                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/30/Thunder_and_rain.ogg/Thunder_and_rain.ogg.mp3",
+                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/23/Thunderstorm_with_rain.ogg/Thunderstorm_with_rain.ogg.mp3",
+                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f6/Severe_thunderstorm.ogg/Severe_thunderstorm.ogg.mp3"
+            },
+            viento: {
+                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/9f/Wind_howling.ogg/Wind_howling.ogg.mp3",
+                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/07/Strong_wind_sound.ogg/Strong_wind_sound.ogg.mp3",
+                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/33/Storm_winds.ogg/Storm_winds.ogg.mp3"
+            }
+        };
+
+        const reproductor = document.getElementById('reproductorNativo');
         let isAudioPlaying = false;
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function startRealAudio() {
+            if (!bancoAudiosReales[labAmenazaActual]) return;
+
+            const url = bancoAudiosReales[labAmenazaActual][labNivelActual];
+            if (reproductor.src !== url) {
+                reproductor.src = url;
             }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+
+            // Volumen escalonado según nivel de alerta
+            reproductor.volume = labNivelActual === 'amarillo' ? 0.45 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
+
+            reproductor.play().then(() => {
+                isAudioPlaying = true;
+                document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
+            }).catch(e => {
+                console.warn("Reproducción en espera de interacción del usuario:", e);
+            });
         }
 
-        function stopSoundEngine() {
-            if (thunderTimer) {
-                clearInterval(thunderTimer);
-                thunderTimer = null;
-            }
-            activeNodes.forEach(n => {
-                try { n.stop(); n.disconnect(); } catch(e){}
-            });
-            activeNodes = [];
+        function stopRealAudio() {
+            reproductor.pause();
             isAudioPlaying = false;
             document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
         }
 
-        function triggerTrueno() {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-
-            // Destello visual
-            const visor = document.getElementById('labVisualizerBox');
-            if (visor) {
-                const bg = visor.style.backgroundColor;
-                visor.style.backgroundColor = '#ffffff';
-                setTimeout(() => { visor.style.backgroundColor = bg; }, 80);
-            }
-
-            // Chasquido inicial
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(200, now);
-            osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
-
-            const mult = labNivelActual === 'rojo' ? 1.0 : (labNivelActual === 'naranja' ? 0.7 : 0.4);
-            gain.gain.setValueAtTime(0.8 * mult, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 2.0);
-        }
-
-        function dispararTruenoManual() {
-            initAudio();
-            triggerTrueno();
-        }
-
-        function startSoundEngine() {
-            initAudio();
-            stopSoundEngine();
-
-            const now = audioCtx.currentTime;
-
-            if (labAmenazaActual === 'lluvia') {
-                // Tono filtrado suave para lluvia
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.value = 80;
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = labNivelActual === 'amarillo' ? 300 : (labNivelActual === 'naranja' ? 600 : 1200);
-
-                gain.gain.value = labNivelActual === 'amarillo' ? 0.15 : (labNivelActual === 'naranja' ? 0.3 : 0.5);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                activeNodes.push(osc);
-
-            } else if (labAmenazaActual === 'tormenta') {
-                // Fondo de lluvia
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.value = 100;
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = 700;
-
-                gain.gain.value = 0.25;
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                activeNodes.push(osc);
-
-                // Disparo de trueno inicial
-                triggerTrueno();
-
-                // Truenos periódicos automáticos
-                const lapso = labNivelActual === 'rojo' ? 3500 : (labNivelActual === 'naranja' ? 5500 : 8000);
-                thunderTimer = setInterval(triggerTrueno, lapso);
-
-            } else if (labAmenazaActual === 'viento') {
-                // Viento modulado
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = 160;
-
-                const lfo = audioCtx.createOscillator();
-                lfo.frequency.value = labNivelActual === 'amarillo' ? 0.2 : 0.6;
-                const lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = 80;
-
-                lfo.connect(osc.frequency);
-
-                gain.gain.value = labNivelActual === 'amarillo' ? 0.2 : 0.5;
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                osc.start(now);
-                lfo.start(now);
-                activeNodes.push(osc, lfo);
-            }
-
-            isAudioPlaying = true;
-            document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
-        }
-
         function toggleAudio() {
             if (isAudioPlaying) {
-                stopSoundEngine();
+                stopRealAudio();
             } else {
-                startSoundEngine();
+                startRealAudio();
             }
         }
 
@@ -928,7 +814,6 @@
             a.click();
         }
 
-        // Arranque seguro garantizado
         window.onload = function() {
             renderLaboratorio();
             actualizarVistaRecomendaciones();
