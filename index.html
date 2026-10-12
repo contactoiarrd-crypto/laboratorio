@@ -359,7 +359,7 @@
                     <label style="color: #cbd5e1;">Seleccioná la amenaza a experimentar:</label>
                     <select id="labAmenazaSelect" onchange="cambiarAmenazaLab()">
                         <option value="lluvia">💧 Lluvias Acumuladas</option>
-                        <option value="tormenta">⚡ Tormentas Fuertes (Truenos, Rayos y Granizo)</option>
+                        <option value="tormenta">⚡ Tormentas Fuertes (Truenos y Granizo)</option>
                         <option value="viento">🍃 Viento e Intensidad de Ráfagas</option>
                         <option value="nieve">❄️ Nevadas e Imposibilidad de Desplazamiento</option>
                         <option value="calor">🌡️ Ola de Calor (Estrés Térmico)</option>
@@ -514,18 +514,22 @@
     <script>
         // --- NAVEGACIÓN ---
         function mostrarSeccion(id) {
-            document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
-            document.querySelectorAll('.bloque-contenido').forEach(c => c.classList.remove('activo'));
-            
-            if(id === 'laboratorio') {
-                document.querySelectorAll('.boton-seccion')[0].classList.add('activo');
-                document.getElementById('seccion-laboratorio').classList.add('activo');
-            } else if(id === 'alertas') {
-                document.querySelectorAll('.boton-seccion')[1].classList.add('activo');
-                document.getElementById('seccion-alertas').classList.add('activo');
-            } else {
-                document.querySelectorAll('.boton-seccion')[2].classList.add('activo');
-                document.getElementById('seccion-plan').classList.add('activo');
+            try {
+                document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
+                document.querySelectorAll('.bloque-contenido').forEach(c => c.classList.remove('activo'));
+                
+                if(id === 'laboratorio') {
+                    document.querySelectorAll('.boton-seccion')[0].classList.add('activo');
+                    document.getElementById('seccion-laboratorio').classList.add('activo');
+                } else if(id === 'alertas') {
+                    document.querySelectorAll('.boton-seccion')[1].classList.add('activo');
+                    document.getElementById('seccion-alertas').classList.add('activo');
+                } else {
+                    document.querySelectorAll('.boton-seccion')[2].classList.add('activo');
+                    document.getElementById('seccion-plan').classList.add('activo');
+                }
+            } catch(e) {
+                console.error("Error al cambiar pestaña:", e);
             }
         }
 
@@ -537,6 +541,7 @@
         function runBreathingCycle() {
             const circulo = document.getElementById('circuloBreathing');
             const txt = document.getElementById('textoRespiracion');
+            if(!circulo || !txt) return;
 
             if (breathingPhase === 0) {
                 txt.innerText = "1. INHALA por la nariz (4s)...";
@@ -563,20 +568,20 @@
             if (isBreathingActive) {
                 clearInterval(breathingTimer);
                 isBreathingActive = false;
-                btn.innerText = "Iniciar Guía de Respiración";
-                txt.innerText = "Presiona Iniciar para sincronizar";
-                circulo.className = "circulo-respiracion";
+                if(btn) btn.innerText = "Iniciar Guía de Respiración";
+                if(txt) txt.innerText = "Presiona Iniciar para sincronizar";
+                if(circulo) circulo.className = "circulo-respiracion";
                 breathingPhase = 0;
             } else {
                 isBreathingActive = true;
-                btn.innerText = "Detener Guía";
+                if(btn) btn.innerText = "Detener Guía";
                 breathingPhase = 0;
                 runBreathingCycle();
                 breathingTimer = setInterval(runBreathingCycle, 4000);
             }
         }
 
-        // --- MOTOR ACÚSTICO AVANZADO CON TRUENOS REALES Y GRANIZO ---
+        // --- MOTOR ACÚSTICO PROTEGIDO ---
         let audioCtx = null;
         let masterGain = null;
         let activeSources = [];
@@ -590,11 +595,18 @@
         const amenazasConAudio = ['lluvia', 'tormenta', 'viento'];
 
         function initAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        audioCtx = new AudioContextClass();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch(e) {
+                console.error("AudioContext no admitido o bloqueado:", e);
             }
         }
 
@@ -612,11 +624,13 @@
             });
             activeSources = [];
             isAudioPlaying = false;
-            document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
+            const btn = document.getElementById('btnAudioToggle');
+            if(btn) btn.innerText = 'Activar Sonido';
         }
 
         function createNaturalNoiseBuffer(type = 'pink') {
-            const bufferSize = audioCtx.sampleRate * 4;
+            if(!audioCtx) return null;
+            const bufferSize = audioCtx.sampleRate * 2;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
             let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
@@ -640,180 +654,184 @@
             return buffer;
         }
 
-        // Generador de trueno con estruendo seco y retumbo de baja frecuencia
         function triggerRealisticThunder(intensidad = 'amarillo') {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!isAudioPlaying || !audioCtx || !masterGain) return;
 
-            const now = audioCtx.currentTime;
+            try {
+                const now = audioCtx.currentTime;
 
-            // 1. Estruendo seco inicial del rayo
-            if (intensidad === 'naranja' || intensidad === 'rojo') {
-                const crackOsc = audioCtx.createOscillator();
-                const crackGain = audioCtx.createGain();
-                crackOsc.type = 'triangle';
-                crackOsc.frequency.setValueAtTime(160, now);
-                crackOsc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                if (intensidad === 'naranja' || intensidad === 'rojo') {
+                    const crackOsc = audioCtx.createOscillator();
+                    const crackGain = audioCtx.createGain();
+                    crackOsc.type = 'triangle';
+                    crackOsc.frequency.setValueAtTime(160, now);
+                    crackOsc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
 
-                crackGain.gain.setValueAtTime(intensidad === 'rojo' ? 1.0 : 0.6, now);
-                crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                    crackGain.gain.setValueAtTime(intensidad === 'rojo' ? 1.0 : 0.6, now);
+                    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-                crackOsc.connect(crackGain);
-                crackGain.connect(masterGain);
-                crackOsc.start(now);
-                crackOsc.stop(now + 0.2);
+                    crackOsc.connect(crackGain);
+                    crackGain.connect(masterGain);
+                    crackOsc.start(now);
+                    crackOsc.stop(now + 0.2);
+                }
+
+                const thunderBuffer = createNaturalNoiseBuffer('brown');
+                if(!thunderBuffer) return;
+                const thunderSource = audioCtx.createBufferSource();
+                thunderSource.buffer = thunderBuffer;
+
+                const thunderFilter = audioCtx.createBiquadFilter();
+                thunderFilter.type = 'lowpass';
+                const fInicial = intensidad === 'rojo' ? 240 : (intensidad === 'naranja' ? 180 : 110);
+                thunderFilter.frequency.setValueAtTime(fInicial, now);
+                thunderFilter.frequency.exponentialRampToValueAtTime(35, now + 3.2);
+
+                const thunderGain = audioCtx.createGain();
+                const volMax = intensidad === 'rojo' ? 1.0 : (intensidad === 'naranja' ? 0.75 : 0.4);
+                thunderGain.gain.setValueAtTime(0.05, now);
+                thunderGain.gain.linearRampToValueAtTime(volMax, now + 0.08);
+                thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+
+                thunderSource.connect(thunderFilter);
+                thunderFilter.connect(thunderGain);
+                thunderGain.connect(masterGain);
+
+                thunderSource.start(now);
+                thunderSource.stop(now + 3.6);
+            } catch(e) {
+                console.error("Error al reproducir trueno:", e);
             }
-
-            // 2. Retumbo sostenido y reverberante
-            const thunderBuffer = createNaturalNoiseBuffer('brown');
-            const thunderSource = audioCtx.createBufferSource();
-            thunderSource.buffer = thunderBuffer;
-
-            const thunderFilter = audioCtx.createBiquadFilter();
-            thunderFilter.type = 'lowpass';
-            const fInicial = intensidad === 'rojo' ? 240 : (intensidad === 'naranja' ? 180 : 110);
-            thunderFilter.frequency.setValueAtTime(fInicial, now);
-            thunderFilter.frequency.exponentialRampToValueAtTime(35, now + 3.2);
-
-            const thunderGain = audioCtx.createGain();
-            const volMax = intensidad === 'rojo' ? 1.0 : (intensidad === 'naranja' ? 0.75 : 0.4);
-            thunderGain.gain.setValueAtTime(0.05, now);
-            thunderGain.gain.linearRampToValueAtTime(volMax, now + 0.08);
-            thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
-
-            thunderSource.connect(thunderFilter);
-            thunderFilter.connect(thunderGain);
-            thunderGain.connect(masterGain);
-
-            thunderSource.start(now);
-            thunderSource.stop(now + 3.6);
         }
 
-        // Generador de impacto de piedra de granizo contra chapa/vidrio
         function triggerHailStone() {
-            if (!isAudioPlaying || !audioCtx) return;
+            if (!isAudioPlaying || !audioCtx || !masterGain) return;
 
-            const now = audioCtx.currentTime;
-            const hailOsc = audioCtx.createOscillator();
-            const hailGain = audioCtx.createGain();
+            try {
+                const now = audioCtx.currentTime;
+                const hailOsc = audioCtx.createOscillator();
+                const hailGain = audioCtx.createGain();
 
-            // Frecuencias metálicas de impacto seco
-            const freq = 1200 + Math.random() * 1800;
-            hailOsc.type = 'sine';
-            hailOsc.frequency.setValueAtTime(freq, now);
-            hailOsc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.03);
+                const freq = 1200 + Math.random() * 1800;
+                hailOsc.type = 'sine';
+                hailOsc.frequency.setValueAtTime(freq, now);
+                hailOsc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.03);
 
-            const vol = 0.05 + Math.random() * 0.15;
-            hailGain.gain.setValueAtTime(vol, now);
-            hailGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+                const vol = 0.05 + Math.random() * 0.15;
+                hailGain.gain.setValueAtTime(vol, now);
+                hailGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
-            hailOsc.connect(hailGain);
-            hailGain.connect(masterGain);
+                hailOsc.connect(hailGain);
+                hailGain.connect(masterGain);
 
-            hailOsc.start(now);
-            hailOsc.stop(now + 0.04);
+                hailOsc.start(now);
+                hailOsc.stop(now + 0.04);
+            } catch(e) {}
         }
 
         function startSoundEngine() {
-            initAudioContext();
-            stopSoundEngine();
+            try {
+                initAudioContext();
+                stopSoundEngine();
 
-            masterGain = audioCtx.createGain();
-            masterGain.connect(audioCtx.destination);
+                if(!audioCtx) return;
 
-            if (labAmenazaActual === 'lluvia') {
-                document.getElementById('nombreSonido').innerText = `Lluvia Acumulada (${labNivelActual.toUpperCase()})`;
-                
-                const noiseSrc = audioCtx.createBufferSource();
-                noiseSrc.buffer = createNaturalNoiseBuffer('pink');
-                noiseSrc.loop = true;
+                masterGain = audioCtx.createGain();
+                masterGain.connect(audioCtx.destination);
 
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = labNivelActual === 'amarillo' ? 450 : (labNivelActual === 'naranja' ? 950 : 2200);
+                if (labAmenazaActual === 'lluvia') {
+                    document.getElementById('nombreSonido').innerText = `Lluvia Acumulada (${labNivelActual.toUpperCase()})`;
+                    
+                    const noiseSrc = audioCtx.createBufferSource();
+                    noiseSrc.buffer = createNaturalNoiseBuffer('pink');
+                    noiseSrc.loop = true;
 
-                const volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.65 : 1.0);
-                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = labNivelActual === 'amarillo' ? 450 : (labNivelActual === 'naranja' ? 950 : 2200);
 
-                noiseSrc.connect(filter);
-                filter.connect(masterGain);
-                noiseSrc.start();
-                activeSources.push(noiseSrc);
+                    const volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.65 : 1.0);
+                    masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
 
-            } else if (labAmenazaActual === 'tormenta') {
-                document.getElementById('nombreSonido').innerText = `Tormenta Severa con Granizo (${labNivelActual.toUpperCase()})`;
+                    noiseSrc.connect(filter);
+                    filter.connect(masterGain);
+                    noiseSrc.start();
+                    activeSources.push(noiseSrc);
 
-                // Capa 1: Lluvia continua torrencial
-                const rainSrc = audioCtx.createBufferSource();
-                rainSrc.buffer = createNaturalNoiseBuffer('pink');
-                rainSrc.loop = true;
+                } else if (labAmenazaActual === 'tormenta') {
+                    document.getElementById('nombreSonido').innerText = `Tormenta Severa con Granizo (${labNivelActual.toUpperCase()})`;
 
-                const rainFilter = audioCtx.createBiquadFilter();
-                rainFilter.type = 'lowpass';
-                rainFilter.frequency.value = labNivelActual === 'amarillo' ? 600 : 1600;
+                    const rainSrc = audioCtx.createBufferSource();
+                    rainSrc.buffer = createNaturalNoiseBuffer('pink');
+                    rainSrc.loop = true;
 
-                rainSrc.connect(rainFilter);
-                rainFilter.connect(masterGain);
-                rainSrc.start();
-                activeSources.push(rainSrc);
+                    const rainFilter = audioCtx.createBiquadFilter();
+                    rainFilter.type = 'lowpass';
+                    rainFilter.frequency.value = labNivelActual === 'amarillo' ? 600 : 1600;
 
-                // Volumen general
-                const volume = labNivelActual === 'amarillo' ? 0.5 : (labNivelActual === 'naranja' ? 0.85 : 1.0);
-                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                    rainSrc.connect(rainFilter);
+                    rainFilter.connect(masterGain);
+                    rainSrc.start();
+                    activeSources.push(rainSrc);
 
-                // Disparo de trueno inicial al presionar play
-                triggerRealisticThunder(labNivelActual);
+                    const volume = labNivelActual === 'amarillo' ? 0.5 : (labNivelActual === 'naranja' ? 0.85 : 1.0);
+                    masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
 
-                // Cadencia de truenos según severidad
-                const tIntervalo = labNivelActual === 'rojo' ? 3800 : (labNivelActual === 'naranja' ? 6000 : 10000);
-                thunderInterval = setInterval(() => {
                     triggerRealisticThunder(labNivelActual);
-                }, tIntervalo);
 
-                // Capa 2: Repiqueteo de granizo en Naranja y Rojo
-                if (labNivelActual === 'naranja' || labNivelActual === 'rojo') {
-                    const hVelocidad = labNivelActual === 'rojo' ? 45 : 90; // Milisegundos entre piedras
-                    hailInterval = setInterval(() => {
-                        triggerHailStone();
-                        if (labNivelActual === 'rojo' && Math.random() > 0.4) {
-                            triggerHailStone(); // Ráfagas dobles en nivel rojo
-                        }
-                    }, hVelocidad);
+                    const tIntervalo = labNivelActual === 'rojo' ? 3800 : (labNivelActual === 'naranja' ? 6000 : 10000);
+                    thunderInterval = setInterval(() => {
+                        triggerRealisticThunder(labNivelActual);
+                    }, tIntervalo);
+
+                    if (labNivelActual === 'naranja' || labNivelActual === 'rojo') {
+                        const hVelocidad = labNivelActual === 'rojo' ? 45 : 90;
+                        hailInterval = setInterval(() => {
+                            triggerHailStone();
+                            if (labNivelActual === 'rojo' && Math.random() > 0.4) {
+                                triggerHailStone();
+                            }
+                        }, hVelocidad);
+                    }
+
+                } else if (labAmenazaActual === 'viento') {
+                    document.getElementById('nombreSonido').innerText = `Vendaval y Ráfagas (${labNivelActual.toUpperCase()})`;
+
+                    const windSrc = audioCtx.createBufferSource();
+                    windSrc.buffer = createNaturalNoiseBuffer('brown');
+                    windSrc.loop = true;
+
+                    const windFilter = audioCtx.createBiquadFilter();
+                    windFilter.type = 'bandpass';
+                    windFilter.Q.value = labNivelActual === 'amarillo' ? 2.5 : 4.0;
+                    windFilter.frequency.value = labNivelActual === 'amarillo' ? 280 : 450;
+
+                    const lfo = audioCtx.createOscillator();
+                    lfo.frequency.value = labNivelActual === 'amarillo' ? 0.25 : (labNivelActual === 'naranja' ? 0.5 : 0.9);
+
+                    const lfoGain = audioCtx.createGain();
+                    lfoGain.gain.value = labNivelActual === 'amarillo' ? 180 : (labNivelActual === 'naranja' ? 320 : 500);
+
+                    lfo.connect(lfoGain);
+                    lfoGain.connect(windFilter.frequency);
+
+                    const volume = labNivelActual === 'amarillo' ? 0.4 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
+                    masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+                    windSrc.connect(windFilter);
+                    windFilter.connect(masterGain);
+
+                    windSrc.start();
+                    lfo.start();
+                    activeSources.push(windSrc, lfo);
                 }
 
-            } else if (labAmenazaActual === 'viento') {
-                document.getElementById('nombreSonido').innerText = `Vendaval y Ráfagas (${labNivelActual.toUpperCase()})`;
-
-                const windSrc = audioCtx.createBufferSource();
-                windSrc.buffer = createNaturalNoiseBuffer('brown');
-                windSrc.loop = true;
-
-                const windFilter = audioCtx.createBiquadFilter();
-                windFilter.type = 'bandpass';
-                windFilter.Q.value = labNivelActual === 'amarillo' ? 2.5 : 4.0;
-                windFilter.frequency.value = labNivelActual === 'amarillo' ? 280 : 450;
-
-                const lfo = audioCtx.createOscillator();
-                lfo.frequency.value = labNivelActual === 'amarillo' ? 0.25 : (labNivelActual === 'naranja' ? 0.5 : 0.9);
-
-                const lfoGain = audioCtx.createGain();
-                lfoGain.gain.value = labNivelActual === 'amarillo' ? 180 : (labNivelActual === 'naranja' ? 320 : 500);
-
-                lfo.connect(lfoGain);
-                lfoGain.connect(windFilter.frequency);
-
-                const volume = labNivelActual === 'amarillo' ? 0.4 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
-                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
-
-                windSrc.connect(windFilter);
-                windFilter.connect(masterGain);
-
-                windSrc.start();
-                lfo.start();
-                activeSources.push(windSrc, lfo);
+                isAudioPlaying = true;
+                const btn = document.getElementById('btnAudioToggle');
+                if(btn) btn.innerText = 'Detener Sonido';
+            } catch(e) {
+                console.error("Error al iniciar motor de audio:", e);
             }
-
-            isAudioPlaying = true;
-            document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
         }
 
         function toggleAudio() {
@@ -826,6 +844,7 @@
 
         function updateAudioState() {
             const bloqueAudio = document.getElementById('bloqueAudioContainer');
+            if(!bloqueAudio) return;
             if (amenazasConAudio.includes(labAmenazaActual)) {
                 bloqueAudio.style.display = 'flex';
                 if (isAudioPlaying) {
@@ -987,42 +1006,52 @@
         };
 
         function renderLaboratorio() {
-            const data = baseMultiamenazaLab[labAmenazaActual][labNivelActual];
-            const fluido = document.getElementById('labFluidoLayer');
-            const silueta = document.getElementById('labSilueta');
-            const visorBox = document.getElementById('labVisualizerBox');
+            try {
+                const data = baseMultiamenazaLab[labAmenazaActual][labNivelActual];
+                const fluido = document.getElementById('labFluidoLayer');
+                const silueta = document.getElementById('labSilueta');
+                const visorBox = document.getElementById('labVisualizerBox');
 
-            fluido.style.height = data.height;
-            silueta.style.transform = data.transform;
-            visorBox.style.backgroundColor = data.bgVisor;
+                if(fluido) fluido.style.height = data.height;
+                if(silueta) silueta.style.transform = data.transform;
+                if(visorBox) visorBox.style.backgroundColor = data.bgVisor;
 
-            if(labAmenazaActual === 'nieve') {
-                fluido.style.background = 'linear-gradient(180deg, rgba(241, 245, 249, 0.9) 0%, rgba(203, 213, 225, 0.95) 100%)';
-            } else if(labAmenazaActual === 'calor') {
-                fluido.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.6) 100%)';
-            } else {
-                fluido.style.background = 'linear-gradient(180deg, rgba(56, 189, 248, 0.7) 0%, rgba(14, 165, 233, 0.95) 100%)';
+                if(fluido) {
+                    if(labAmenazaActual === 'nieve') {
+                        fluido.style.background = 'linear-gradient(180deg, rgba(241, 245, 249, 0.9) 0%, rgba(203, 213, 225, 0.95) 100%)';
+                    } else if(labAmenazaActual === 'calor') {
+                        fluido.style.background = 'linear-gradient(180deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.6) 100%)';
+                    } else {
+                        fluido.style.background = 'linear-gradient(180deg, rgba(56, 189, 248, 0.7) 0%, rgba(14, 165, 233, 0.95) 100%)';
+                    }
+                }
+
+                document.getElementById('labUmbral').innerText = data.umbral;
+                document.getElementById('labVolumen').innerText = data.volumen;
+                document.getElementById('labCasa').innerText = data.casa;
+                document.getElementById('labCuerpo').innerText = data.cuerpo;
+                document.getElementById('labHTitle').innerText = data.hTitle;
+                document.getElementById('labHText').innerText = data.hText;
+                document.documentElement.style.setProperty('--alert-active-color', data.color);
+
+                updateAudioState();
+            } catch(e) {
+                console.error("Error en renderLaboratorio:", e);
             }
-
-            document.getElementById('labUmbral').innerText = data.umbral;
-            document.getElementById('labVolumen').innerText = data.volumen;
-            document.getElementById('labCasa').innerText = data.casa;
-            document.getElementById('labCuerpo').innerText = data.cuerpo;
-            document.getElementById('labHTitle').innerText = data.hTitle;
-            document.getElementById('labHText').innerText = data.hText;
-            document.documentElement.style.setProperty('--alert-active-color', data.color);
-
-            updateAudioState();
         }
 
         function cambiarAmenazaLab() {
-            labAmenazaActual = document.getElementById('labAmenazaSelect').value;
-            renderLaboratorio();
+            const select = document.getElementById('labAmenazaSelect');
+            if(select) {
+                labAmenazaActual = select.value;
+                renderLaboratorio();
+            }
         }
 
         function setLaboratorioNivel(nivel) {
             document.querySelectorAll('.btn-lab').forEach(b => b.classList.remove('activo'));
-            document.querySelector(`.btn-lab-${nivel}`).classList.add('activo');
+            const activo = document.querySelector(`.btn-lab-${nivel}`);
+            if(activo) activo.classList.add('activo');
             labNivelActual = nivel;
             renderLaboratorio();
         }
@@ -1044,3 +1073,153 @@
                     antes: ["Desconectá suministros de luz y gas si el agua sube (Ref. SMN: 125 mm/24 h).", "Llevá elementos de valor a zonas elevadas."],
                     durante: ["Evacuá si las autoridades locales así lo indican.", "No cruces corrientes de agua bajo ningún concepto."],
                     despues: ["Regresá solo cuando la autoridad lo declare seguro."]
+                }
+            },
+            tormenta: {
+                amarillo: {
+                    antes: ["Asegurá objetos sueltos en balcones.", "Cargá dispositivos de comunicación."],
+                    durante: ["Permanecé dentro de construcciones firmes.", "Desconectá aparatos sensibles."],
+                    despues: ["Constatá que la instalación eléctrica no presente fallas."]
+                },
+                naranja: {
+                    antes: ["Desconectá electrodomésticos.", "Resguardá el vehículo bajo techo firme por granizo."],
+                    durante: ["Alejate de estructuras metálicas y árboles aislados."],
+                    despues: ["Circulá con precaución ante postes caídos."]
+                },
+                rojo: {
+                    antes: ["Cortá los suministros generales.", "Ubicáte en la habitación más central del inmueble."],
+                    durante: ["No salgas a la intemperie bajo ninguna circunstancia."],
+                    despues: ["Aguardá indicaciones oficiales para tareas exteriores."]
+                }
+            },
+            viento: {
+                amarillo: {
+                    antes: ["Asegurá chapas, macetas y elementos sueltos (Ref. SMN: 65 km/h)."],
+                    durante: ["Evitá circular cerca de árboles grandes o carteles."],
+                    despues: ["Verificá la estabilidad de muros y techos."]
+                },
+                naranja: {
+                    antes: ["Reforzá las fijaciones de techos livianos (Ref. SMN: 110 km/h)."],
+                    durante: ["Suspendé trabajos en altura.", "Permanecé alejado de cristales."],
+                    despues: ["No toques cables derribados."]
+                },
+                rojo: {
+                    antes: ["Asegurá accesos y refugiá a la familia (Ref. SMN: 150 km/h)."],
+                    durante: ["Ubicáte en pasillos o baños sin ventanas."],
+                    despues: ["Esperá a que amaine completamente antes de salir."]
+                }
+            },
+            nieve: {
+                amarillo: {
+                    antes: ["Verificá aislamiento de tuberías (Ref. SMN: 30 mm equiv./12 h)."],
+                    durante: ["Circulá con cadenas en las ruedas."],
+                    despues: ["Despejá la nieve acumulada en veredas."]
+                },
+                naranja: {
+                    antes: ["Evitá desplazamientos interurbanos."],
+                    durante: ["Mantené el auto encendido a intervalos con ventana entreabierta si quedás atrapado."],
+                    despues: ["Caminá con cuidado sobre el hielo."]
+                },
+                rojo: {
+                    antes: ["Permanecé aislado y racionalizá la energía."],
+                    durante: ["No intentes caminar en medio de ventiscas."],
+                    despues: ["Aguardá a las máquinas despejadoras."]
+                }
+            },
+            calor: {
+                amarillo: {
+                    antes: ["Ventilá la casa durante las horas más frescas.", "Asegurá reservas de agua potable."],
+                    durante: ["Tomá agua con frecuencia sin esperar a tener sed.", "Evitá exposición directa al sol entre las 10 y 16 hs."],
+                    despues: ["Mantené comidas livianas y buena hidratación."]
+                },
+                naranja: {
+                    antes: ["Cerrá persianas en fachadas expuestas al sol."],
+                    durante: ["Usá ropa clara y de algodón.", "Ofrecé agua permanentemente a niños y adultos mayores."],
+                    despues: ["Vigilá síntomas como dolor de cabeza o mareos."]
+                },
+                rojo: {
+                    antes: ["Identificá centros de salud cercanos y evitá esfuerzos físicos."],
+                    durante: ["Permanecé en los ambientes más frescos o climatizados.", "Aplicá paños húmedos si sentís calor excesivo."],
+                    despues: ["Ante confusión o fiebre alta, solicitá emergencias de inmediato."]
+                }
+            }
+        };
+
+        const recomendacionesMascotas = {
+            amarillo: ["Ingresá a tus mascotas al interior de la vivienda.", "Asegurate de que tengan agua fresca y alimento resguardado."],
+            naranja: ["Mantené a los perros con collar, correa e identificación.", "Ubicá a los gatos en transportadoras o habitaciones cerradas."],
+            rojo: ["Si debés evacuar, llevá a tus mascotas con su alimento y kit básico.", "Jamás dejes a los animales atados o encerrados sin posibilidad de escape."]
+        };
+
+        let nivelSeleccionado = 'amarillo';
+        let faseSeleccionada = 'antes';
+
+        function actualizarVistaRecomendaciones() {
+            try {
+                const amenaza = document.getElementById('tipo-amenaza').value;
+                const cartel = document.getElementById('cartel-alerta');
+                const texto = document.getElementById('texto-cartel');
+
+                cartel.className = `encabezado-alerta ${nivelSeleccionado}`;
+                texto.innerText = nivelSeleccionado === 'amarillo' ? 'ALERTA AMARILLA: Informate y tomá precauciones.' : (nivelSeleccionado === 'naranja' ? 'ALERTA NARANJA: Preparate y tené lista la respuesta.' : 'ALERTA ROJA: Tomá acción inmediata y protegé la vida.');
+
+                const acciones = datosRecomendaciones[amenaza][nivelSeleccionado][faseSeleccionada];
+                document.getElementById('lista-acciones').innerHTML = acciones.map(i => `<li>${i}</li>`).join('');
+                document.getElementById('lista-mascotas').innerHTML = recomendacionesMascotas[nivelSeleccionado].map(i => `<li>${i}</li>`).join('');
+            } catch(e) {
+                console.error("Error en actualizarVistaRecomendaciones:", e);
+            }
+        }
+
+        // Eventos de Pestaña 2
+        const selAmenaza = document.getElementById('tipo-amenaza');
+        if(selAmenaza) selAmenaza.addEventListener('change', actualizarVistaRecomendaciones);
+
+        document.querySelectorAll('.boton-nivel').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.boton-nivel').forEach(x => x.classList.remove('activo'));
+                b.classList.add('activo');
+                nivelSeleccionado = b.getAttribute('data-nivel');
+                actualizarVistaRecomendaciones();
+            });
+        });
+
+        document.querySelectorAll('.boton-fase').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.boton-fase').forEach(x => x.classList.remove('activo'));
+                b.classList.add('activo');
+                faseSeleccionada = b.getAttribute('data-fase');
+                actualizarVistaRecomendaciones();
+            });
+        });
+
+        // --- PLAN FAMILIAR CHECKLIST ---
+        function actualizarProgreso() {
+            const cbs = document.querySelectorAll('.elemento-checklist input[type="checkbox"]');
+            const marcados = Array.from(cbs).filter(c => c.checked).length;
+            const barra = document.getElementById('barra-progreso');
+            if(barra && cbs.length > 0) {
+                barra.style.width = `${(marcados / cbs.length) * 100}%`;
+            }
+        }
+
+        function descargarListaTexto() {
+            let txt = "PLAN DE EMERGENCIA FAMILIAR - IIARRD\n===================================\n\n";
+            document.querySelectorAll('.elemento-checklist').forEach(e => {
+                const cb = e.querySelector('input').checked ? "[COMPLETADO]" : "[PENDIENTE]";
+                txt += `${cb} ${e.querySelector('label').childNodes[0].textContent.trim()}\n   ${e.querySelector('small').textContent.trim()}\n\n`;
+            });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([txt], {type: 'text/plain;charset=utf-8'}));
+            a.download = 'Plan_Familiar_IIARRD.txt';
+            a.click();
+        }
+
+        // Inicialización segura al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            renderLaboratorio();
+            actualizarVistaRecomendaciones();
+        });
+    </script>
+</body>
+</html>
