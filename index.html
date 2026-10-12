@@ -183,7 +183,7 @@
             align-items: flex-end;
             justify-content: center;
             border: 1px solid #334155;
-            transition: background 0.15s;
+            transition: background 0.1s;
         }
 
         .capa-fluido {
@@ -602,7 +602,7 @@
             }
         }
 
-        // --- MOTOR ACÚSTICO REFORZADO: TRUENOS CON SUB-GRAVES Y RELÁMPAGOS ---
+        // --- MOTOR ACÚSTICO ROBUSTO Y AUDIBLE ---
         let audioCtx = null;
         let masterGain = null;
         let activeSources = [];
@@ -675,118 +675,129 @@
             return buffer;
         }
 
-        // Destello visual sincronizado con el trueno
         function destelloRelampagoVisual() {
             const visor = document.getElementById('labVisualizerBox');
             if(!visor) return;
             const bgOriginal = visor.style.backgroundColor;
-            visor.style.backgroundColor = '#f8fafc';
+            visor.style.backgroundColor = '#ffffff';
             setTimeout(() => {
-                visor.style.backgroundColor = '#1e293b';
+                visor.style.backgroundColor = '#0f172a';
                 setTimeout(() => {
-                    visor.style.backgroundColor = '#f8fafc';
+                    visor.style.backgroundColor = '#ffffff';
                     setTimeout(() => {
                         visor.style.backgroundColor = bgOriginal;
-                    }, 60);
+                    }, 50);
                 }, 40);
-            }, 70);
+            }, 60);
         }
 
-        // Trueno con impacto real: chasquido + golpe grave de 50Hz + retumbo largo
+        // MOTOR DE TRUENO AUDIBLE CON MULTI-CAPA
         function triggerRealisticThunder(intensidad = 'amarillo') {
-            if (!isAudioPlaying || !audioCtx || !masterGain) return;
+            if (!isAudioPlaying || !audioCtx) return;
 
             try {
                 const now = audioCtx.currentTime;
                 destelloRelampagoVisual();
 
-                const gananciaMultiplicador = intensidad === 'rojo' ? 1.6 : (intensidad === 'naranja' ? 1.2 : 0.7);
+                const mult = intensidad === 'rojo' ? 1.0 : (intensidad === 'naranja' ? 0.75 : 0.5);
 
-                // 1. Chasquido eléctrico inicial (crack de rayo)
-                const crackOsc = audioCtx.createOscillator();
+                // Capa A: Chasquido y estallido inicial del rayo (crack agudo y áspero)
+                const crackBuf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.15), audioCtx.sampleRate);
+                const cData = crackBuf.getChannelData(0);
+                for(let i = 0; i < cData.length; i++) {
+                    cData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.03));
+                }
+                const crackSrc = audioCtx.createBufferSource();
+                crackSrc.buffer = crackBuf;
+                const crackFilter = audioCtx.createBiquadFilter();
+                crackFilter.type = 'highpass';
+                crackFilter.frequency.value = 800;
                 const crackGain = audioCtx.createGain();
-                crackOsc.type = 'sawtooth';
-                crackOsc.frequency.setValueAtTime(450, now);
-                crackOsc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
+                crackGain.gain.setValueAtTime(0.8 * mult, now);
+                crackSrc.connect(crackFilter);
+                crackFilter.connect(crackGain);
+                crackGain.connect(audioCtx.destination);
+                crackSrc.start(now);
 
-                crackGain.gain.setValueAtTime(0.7 * gananciaMultiplicador, now);
-                crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                // Capa B: Rugido grave de frecuencias medias audibles (100Hz a 280Hz)
+                const roarBuffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 3.0), audioCtx.sampleRate);
+                const rData = roarBuffer.getChannelData(0);
+                let lastVal = 0;
+                for(let i = 0; i < rData.length; i++) {
+                    const decay = Math.exp(-i / (audioCtx.sampleRate * 1.1));
+                    lastVal = (lastVal + (Math.random() * 2 - 1) * 0.1) * 0.98;
+                    rData[i] = lastVal * 4.0 * decay;
+                }
+                const roarSrc = audioCtx.createBufferSource();
+                roarSrc.buffer = roarBuffer;
 
-                crackOsc.connect(crackGain);
-                crackGain.connect(masterGain);
-                crackOsc.start(now);
-                crackOsc.stop(now + 0.15);
+                const roarFilter = audioCtx.createBiquadFilter();
+                roarFilter.type = 'lowpass';
+                roarFilter.frequency.setValueAtTime(intensidad === 'rojo' ? 450 : 300, now);
+                roarFilter.frequency.linearRampToValueAtTime(70, now + 2.8);
 
-                // 2. Onda sub-grave de choque físico (el retumbo en el pecho: 55Hz cayendo a 28Hz)
+                const roarGain = audioCtx.createGain();
+                roarGain.gain.setValueAtTime(0.2 * mult, now);
+                roarGain.gain.linearRampToValueAtTime(0.95 * mult, now + 0.05);
+                roarGain.gain.linearRampToValueAtTime(0.001, now + 2.9);
+
+                roarSrc.connect(roarFilter);
+                roarFilter.connect(roarGain);
+                roarGain.connect(audioCtx.destination);
+                roarSrc.start(now);
+
+                // Capa C: Sub-grave profundo (golpe físico 80Hz cayendo a 40Hz)
                 const subOsc = audioCtx.createOscillator();
                 const subGain = audioCtx.createGain();
-                subOsc.type = 'sine';
-                subOsc.frequency.setValueAtTime(65, now);
-                subOsc.frequency.exponentialRampToValueAtTime(28, now + 1.2);
+                subOsc.type = 'sawtooth';
+                subOsc.frequency.setValueAtTime(110, now);
+                subOsc.frequency.exponentialRampToValueAtTime(38, now + 1.8);
 
-                subGain.gain.setValueAtTime(0.85 * gananciaMultiplicador, now);
-                subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+                subGain.gain.setValueAtTime(0.6 * mult, now);
+                subGain.gain.linearRampToValueAtTime(0.001, now + 1.9);
 
-                subOsc.connect(subGain);
-                subGain.connect(masterGain);
+                const subFilter = audioCtx.createBiquadFilter();
+                subFilter.type = 'lowpass';
+                subFilter.frequency.value = 160;
+
+                subOsc.connect(subFilter);
+                subFilter.connect(subGain);
+                subGain.connect(audioCtx.destination);
                 subOsc.start(now);
-                subOsc.stop(now + 1.6);
+                subOsc.stop(now + 2.0);
 
-                // 3. Reverberación larga y retumbante de ruido brown
-                const thunderBuffer = createNaturalNoiseBuffer('brown');
-                if(!thunderBuffer) return;
-                const thunderSource = audioCtx.createBufferSource();
-                thunderSource.buffer = thunderBuffer;
-
-                const thunderFilter = audioCtx.createBiquadFilter();
-                thunderFilter.type = 'lowpass';
-                const fInicial = intensidad === 'rojo' ? 320 : (intensidad === 'naranja' ? 220 : 130);
-                thunderFilter.frequency.setValueAtTime(fInicial, now);
-                thunderFilter.frequency.exponentialRampToValueAtTime(32, now + 4.2);
-
-                const thunderGain = audioCtx.createGain();
-                thunderGain.gain.setValueAtTime(0.3 * gananciaMultiplicador, now);
-                thunderGain.gain.linearRampToValueAtTime(0.95 * gananciaMultiplicador, now + 0.08);
-                thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 4.5);
-
-                thunderSource.connect(thunderFilter);
-                thunderFilter.connect(thunderGain);
-                thunderGain.connect(masterGain);
-
-                thunderSource.start(now);
-                thunderSource.stop(now + 4.6);
             } catch(e) {
                 console.error("Error al disparar trueno:", e);
             }
         }
 
         function dispararTruenoManual() {
+            initAudioContext();
             if(!isAudioPlaying) {
                 startSoundEngine();
             }
             triggerRealisticThunder(labNivelActual);
         }
 
-        // Impacto individual de piedra de granizo sobre chapa
         function triggerHailStone() {
-            if (!isAudioPlaying || !audioCtx || !masterGain) return;
+            if (!isAudioPlaying || !audioCtx) return;
 
             try {
                 const now = audioCtx.currentTime;
                 const hailOsc = audioCtx.createOscillator();
                 const hailGain = audioCtx.createGain();
 
-                const freq = 1400 + Math.random() * 2200;
+                const freq = 1200 + Math.random() * 2000;
                 hailOsc.type = 'triangle';
                 hailOsc.frequency.setValueAtTime(freq, now);
                 hailOsc.frequency.exponentialRampToValueAtTime(freq * 0.3, now + 0.025);
 
-                const vol = 0.08 + Math.random() * 0.18;
+                const vol = 0.08 + Math.random() * 0.15;
                 hailGain.gain.setValueAtTime(vol, now);
                 hailGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
 
                 hailOsc.connect(hailGain);
-                hailGain.connect(masterGain);
+                hailGain.connect(audioCtx.destination);
 
                 hailOsc.start(now);
                 hailOsc.stop(now + 0.035);
@@ -823,7 +834,7 @@
                     activeSources.push(noiseSrc);
 
                 } else if (labAmenazaActual === 'tormenta') {
-                    document.getElementById('nombreSonido').innerText = `Tormenta Severa con Granizo (${labNivelActual.toUpperCase()})`;
+                    document.getElementById('nombreSonido').innerText = `Tormenta Severa (${labNivelActual.toUpperCase()})`;
 
                     // Lluvia de fondo
                     const rainSrc = audioCtx.createBufferSource();
@@ -843,10 +854,11 @@
                     masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
 
                     // Trueno de arranque inmediato
+                    isAudioPlaying = true;
                     triggerRealisticThunder(labNivelActual);
 
-                    // Cadencia reducida: en Rojo cae un trueno cada 2.8s
-                    const tIntervalo = labNivelActual === 'rojo' ? 2800 : (labNivelActual === 'naranja' ? 4500 : 7500);
+                    // Cadencia de truenos automáticos
+                    const tIntervalo = labNivelActual === 'rojo' ? 3200 : (labNivelActual === 'naranja' ? 4800 : 7500);
                     thunderInterval = setInterval(() => {
                         triggerRealisticThunder(labNivelActual);
                     }, tIntervalo);
