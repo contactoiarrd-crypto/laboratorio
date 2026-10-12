@@ -381,7 +381,6 @@
                     <div class="capa-fluido" id="labFluidoLayer" style="height: 15%;"></div>
                 </div>
 
-                <!-- BLOQUE EXPLICATIVO DE MÉTRICAS PEDAGÓGICAS -->
                 <div style="text-align: left; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5;">
                     <p style="margin-bottom: 6px;">
                         <strong>📏 Referencia Técnica:</strong> 
@@ -406,11 +405,10 @@
 
                 <!-- CONTROLES DE AUDIO -->
                 <div class="audio-controls" id="bloqueAudioContainer">
-                    <span>🔊 Audio Real de Campo: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
+                    <span>🔊 Audio Grabado en Campo: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
                     <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
                 </div>
 
-                <!-- REPRODUCTOR NATIVO SEGURO -->
                 <audio id="reproductorNativo" loop preload="auto"></audio>
 
                 <div class="holistic-box" id="labHolisticBox">
@@ -418,7 +416,6 @@
                     <p id="labHText">Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal.</p>
                 </div>
 
-                <!-- SECCIÓN DE AUTORREGULACIÓN: RESPIRACIÓN TÁCTICA -->
                 <div class="seccion-respiracion">
                     <h3 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 4px;">🧘 Ejercicio de Anclaje: Respiración Táctica (4-4-4-4)</h3>
                     <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">Antes de tomar cualquier decisión de respuesta, regula tu sistema nervioso para mantener la lucidez.</p>
@@ -517,7 +514,7 @@
     </div>
 
     <script>
-        // --- 1. NAVEGACIÓN TOTALMENTE INDEPENDIENTE ---
+        // --- 1. NAVEGACIÓN ENTRE PESTAÑAS ---
         function mostrarSeccion(id) {
             document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
             document.querySelectorAll('.bloque-contenido').forEach(c => c.classList.remove('activo'));
@@ -534,7 +531,7 @@
             }
         }
 
-        // --- 2. BASE DE DATOS Y RENDER DEL LABORATORIO ---
+        // --- 2. BASE DE DATOS Y RENDER ---
         const baseMultiamenazaLab = {
             lluvia: {
                 amarillo: { umbral: "30 mm en 12 horas (Modelo Ref: SMN Argentina)", volumen: "30 Litros por m² (~3 baldes de limpieza en un piso de 1x1 m).", casa: "Equivale a volcar 6 tanques de agua (de 500 L) sobre el techo de una casa típica de 100 m².", cuerpo: "El agua cubre el calzado y anega el cordón de la vereda.", color: "#d97706", height: "18%", transform: "rotate(0deg)", bgVisor: "#020617", hTitle: "Estado: Observación y Orden", hText: "Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal." },
@@ -599,10 +596,10 @@
             if (amenazasConAudio.includes(labAmenazaActual)) {
                 bloqueAudio.style.display = 'flex';
                 document.getElementById('nombreSonido').innerText = `${labAmenazaActual.toUpperCase()} (${labNivelActual.toUpperCase()})`;
-                if (isAudioPlaying) startRealAudio();
+                if (isAudioPlaying) startLocalAudio();
             } else {
                 bloqueAudio.style.display = 'none';
-                stopRealAudio();
+                stopLocalAudio();
             }
         }
 
@@ -666,48 +663,31 @@
             }
         }
 
-        // --- 4. AUDIOS REALES RESTAURADOS (NATIVOS, ESTABLES Y SIN SÍNTESIS) ---
-        const bancoAudiosReales = {
-            lluvia: {
-                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/14/Rain_falling_on_leaves.ogg/Rain_falling_on_leaves.ogg.mp3",
-                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/1/18/Rain_on_a_tin_roof.ogg/Rain_on_a_tin_roof.ogg.mp3",
-                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/a/a2/Heavy_rain_in_forest.ogg/Heavy_rain_in_forest.ogg.mp3"
-            },
-            tormenta: {
-                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/30/Thunder_and_rain.ogg/Thunder_and_rain.ogg.mp3",
-                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/2/23/Thunderstorm_with_rain.ogg/Thunderstorm_with_rain.ogg.mp3",
-                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f6/Severe_thunderstorm.ogg/Severe_thunderstorm.ogg.mp3"
-            },
-            viento: {
-                amarillo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/9/9f/Wind_howling.ogg/Wind_howling.ogg.mp3",
-                naranja: "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/07/Strong_wind_sound.ogg/Strong_wind_sound.ogg.mp3",
-                rojo: "https://upload.wikimedia.org/wikipedia/commons/transcoded/3/33/Storm_winds.ogg/Storm_winds.ogg.mp3"
-            }
-        };
-
+        // --- 4. REPRODUCTOR CON RUTA A TUS 9 ARCHIVOS SUBIDOS ---
         const reproductor = document.getElementById('reproductorNativo');
         let isAudioPlaying = false;
 
-        function startRealAudio() {
-            if (!bancoAudiosReales[labAmenazaActual]) return;
-
-            const url = bancoAudiosReales[labAmenazaActual][labNivelActual];
-            if (reproductor.src !== url) {
-                reproductor.src = url;
+        function startLocalAudio() {
+            const ruta = `sonidos/${labAmenazaActual}_${labNivelActual}.mp3`;
+            
+            if (reproductor.getAttribute('data-current') !== ruta) {
+                reproductor.src = ruta;
+                reproductor.setAttribute('data-current', ruta);
             }
 
-            // Volumen escalonado según nivel de alerta
-            reproductor.volume = labNivelActual === 'amarillo' ? 0.45 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
+            // Ganancia progresiva por nivel de alerta
+            // Amarillo: 35% | Naranja: 70% | Rojo: 100%
+            reproductor.volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.70 : 1.0);
 
             reproductor.play().then(() => {
                 isAudioPlaying = true;
                 document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
             }).catch(e => {
-                console.warn("Reproducción en espera de interacción del usuario:", e);
+                console.warn("Esperando interacción o verificando archivo local:", e);
             });
         }
 
-        function stopRealAudio() {
+        function stopLocalAudio() {
             reproductor.pause();
             isAudioPlaying = false;
             document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
@@ -715,9 +695,9 @@
 
         function toggleAudio() {
             if (isAudioPlaying) {
-                stopRealAudio();
+                stopLocalAudio();
             } else {
-                startRealAudio();
+                startLocalAudio();
             }
         }
 
