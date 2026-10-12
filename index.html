@@ -94,7 +94,6 @@
             line-height: 1.4;
         }
 
-        /* NAVEGACIÓN PRINCIPAL */
         .pestanas-principales {
             display: flex;
             gap: 8px;
@@ -138,7 +137,6 @@
             margin-bottom: 20px;
         }
 
-        /* PESTAÑA 1: LABORATORIO MULTIAMENAZA */
         .visor-sensorial {
             background: #0f172a;
             color: #f8fafc;
@@ -242,7 +240,6 @@
             text-transform: uppercase;
         }
 
-        /* RESPIRACIÓN TÁCTICA */
         .seccion-respiracion {
             background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
@@ -292,7 +289,6 @@
             font-weight: 600;
         }
 
-        /* PESTAÑA 2: RECOMENDACIONES */
         .grupo-campo { margin-bottom: 16px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: #334155; font-size: 0.9rem; }
         select { width: 100%; padding: 10px; font-size: 0.95rem; border: 2px solid var(--borde-suave); border-radius: 8px; outline: none; background: #fff; }
@@ -316,7 +312,6 @@
         .lista-recomendaciones li { position: relative; padding-left: 24px; margin-bottom: 10px; font-size: 0.95rem; }
         .lista-recomendaciones li::before { content: "✓"; position: absolute; left: 0; font-weight: bold; color: #0284c7; }
 
-        /* PESTAÑA 3: PLAN FAMILIAR */
         .progreso-contenedor { background-color: #e2e8f0; border-radius: 20px; height: 10px; width: 100%; margin-bottom: 16px; overflow: hidden; }
         .progreso-barra { background-color: var(--color-exito); height: 100%; width: 0%; transition: width 0.3s; }
         .elemento-checklist { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--borde-suave); border-radius: 8px; margin-bottom: 10px; background: #f8fafc; }
@@ -345,7 +340,7 @@
             <p>Traducción sensorial de niveles de alerta y autoprotección comunitaria.</p>
             
             <div class="nota-interamericana">
-                <strong>🌎 Alcance Regional:</strong> Los niveles de alerta (Amarillo, Naranja y Rojo) constituyen un marco universal de concienciación. Los valores numéricos de referencia exhibidos corresponden al Servicio Meteorológico Nacional (SMN) de Argentina como modelo técnico[cite: 1], pero las recomendaciones y la experiencia sensorial son totalmente adaptables a los sistemas de alertas de tu localidad o país.
+                <strong>🌎 Alcance Regional:</strong> Los niveles de alerta (Amarillo, Naranja y Rojo) constituyen un marco universal de concienciación. Los valores numéricos de referencia exhibidos corresponden al Servicio Meteorológico Nacional (SMN) de Argentina como modelo técnico, pero las recomendaciones y la experiencia sensorial son totalmente adaptables a los sistemas de alertas de tu localidad o país.
             </div>
         </header>
 
@@ -388,7 +383,7 @@
                 <div style="text-align: left; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5;">
                     <p style="margin-bottom: 6px;">
                         <strong>📏 Referencia Técnica:</strong> 
-                        <span id="labUmbral">30 mm en 12 horas (Modelo Ref: SMN Argentina)</span>[cite: 1]
+                        <span id="labUmbral">30 mm en 12 horas (Modelo Ref: SMN Argentina)</span>
                     </p>
 
                     <p style="margin-bottom: 6px; color: #38bdf8;">
@@ -409,11 +404,9 @@
 
                 <!-- CONTROLES DE AUDIO -->
                 <div class="audio-controls" id="bloqueAudioContainer">
-                    <span>🔊 Audio Ambiental: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
+                    <span>🔊 Inmersión Sonora: <strong id="nombreSonido" style="color:#38bdf8;">Lluvia</strong></span>
                     <button class="btn-audio" id="btnAudioToggle" onclick="toggleAudio()">Activar Sonido</button>
                 </div>
-
-                <audio id="reproductorAudioReal" loop preload="auto"></audio>
 
                 <div class="holistic-box" id="labHolisticBox">
                     <h4 id="labHTitle">Estado: Observación y Orden</h4>
@@ -514,12 +507,12 @@
         </div>
 
         <footer>
-            <p>Desarrollado como una herramienta pública de concienciación por el <strong>IIARRD (Instituto Interamericano para la Reducción del Riesgo de Desastres)</strong>. Valores de referencia meteorológica tomados del Servicio Meteorológico Nacional (SMN) de Argentina[cite: 1].</p>
+            <p>Desarrollado como una herramienta pública de concienciación por el <strong>IIARRD (Instituto Interamericano para la Reducción del Riesgo de Desastres)</strong>.</p>
         </footer>
     </div>
 
     <script>
-        // --- NAVEGACIÓN ENTRE PESTAÑAS ---
+        // --- NAVEGACIÓN ---
         function mostrarSeccion(id) {
             document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
             document.querySelectorAll('.bloque-contenido').forEach(c => c.classList.remove('activo'));
@@ -583,94 +576,212 @@
             }
         }
 
-        // --- AUDIOS AMBIENTALES REVISION POTENCIA Y VIENTO ---
-        const bancoAudiosReales = {
-            lluvia: {
-                amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
-                naranja: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
-                rojo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"
-            },
-            tormenta: {
-                amarillo: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
-                naranja: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg",
-                rojo: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg"
-            },
-            viento: {
-                amarillo: "https://actions.google.com/sounds/v1/weather/wind_strong_continuous.ogg",
-                naranja: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg",
-                rojo: "https://actions.google.com/sounds/v1/weather/wind_heavy_gusts.ogg"
-            }
-        };
-
+        // --- MOTOR ACÚSTICO AUTOCONTENIDO (SIN DESCARGAS NI DEPENDENCIAS) ---
+        let audioCtx = null;
+        let masterGain = null;
+        let activeSources = [];
+        let thunderInterval = null;
         let isAudioPlaying = false;
+
         let labAmenazaActual = 'lluvia';
         let labNivelActual = 'amarillo';
 
-        const audioPlayer = document.getElementById('reproductorAudioReal');
+        const amenazasConAudio = ['lluvia', 'tormenta', 'viento'];
 
-        function playRealAudio() {
-            if (!bancoAudiosReales[labAmenazaActual]) {
-                stopRealAudio();
-                return;
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-
-            const urlAudio = bancoAudiosReales[labAmenazaActual][labNivelActual];
-            
-            const nombres = {
-                lluvia: 'Lluvia Acumulada Real',
-                tormenta: 'Tormenta Eléctrica Severa',
-                viento: 'Vendaval y Ráfagas Reales'
-            };
-            document.getElementById('nombreSonido').innerText = `${nombres[labAmenazaActual]} (${labNivelActual.toUpperCase()})`;
-
-            if (audioPlayer.src !== urlAudio) {
-                audioPlayer.src = urlAudio;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
-
-            // AUMENTO DE POTENCIA Y VOLUMEN:
-            // Amarillo: 50% | Naranja: 80% | Rojo: 100% (Ganancia máxima de salida)
-            audioPlayer.volume = labNivelActual === 'amarillo' ? 0.50 : (labNivelActual === 'naranja' ? 0.80 : 1.0);
-
-            audioPlayer.play().then(() => {
-                isAudioPlaying = true;
-                document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
-            }).catch(err => {
-                console.log("Esperando interacción para audio:", err);
-            });
         }
 
-        function stopRealAudio() {
-            audioPlayer.pause();
+        function stopSoundEngine() {
+            if (thunderInterval) {
+                clearInterval(thunderInterval);
+                thunderInterval = null;
+            }
+            activeSources.forEach(src => {
+                try { src.stop(); src.disconnect(); } catch(e){}
+            });
+            activeSources = [];
             isAudioPlaying = false;
             document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
         }
 
+        // Generador de buffer de ruido rosa/marrón orgánico continuo
+        function createNaturalNoiseBuffer(type = 'pink') {
+            const bufferSize = audioCtx.sampleRate * 4;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                if (type === 'pink') {
+                    b0 = 0.99886 * b0 + white * 0.0555179;
+                    b1 = 0.99332 * b1 + white * 0.0750759;
+                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b3 = 0.86650 * b3 + white * 0.3104856;
+                    b4 = 0.55000 * b4 + white * 0.5329522;
+                    b5 = -0.7616 * b5 - white * 0.0168980;
+                    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                    b6 = white * 0.115926;
+                } else {
+                    // Brown/Red noise para impacto de agua y viento grave
+                    b0 = (b0 + (0.02 * white)) / 1.02;
+                    data[i] = b0 * 3.5;
+                }
+            }
+            return buffer;
+        }
+
+        function triggerThunderClap(potencia = 1.0) {
+            if (!isAudioPlaying || !audioCtx) return;
+
+            const thunderBuffer = createNaturalNoiseBuffer('brown');
+            const thunderSource = audioCtx.createBufferSource();
+            thunderSource.buffer = thunderBuffer;
+
+            const thunderFilter = audioCtx.createBiquadFilter();
+            thunderFilter.type = 'lowpass';
+            thunderFilter.frequency.setValueAtTime(140, audioCtx.currentTime);
+            thunderFilter.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 2.5);
+
+            const thunderGain = audioCtx.createGain();
+            const now = audioCtx.currentTime;
+            thunderGain.gain.setValueAtTime(0.01, now);
+            thunderGain.gain.linearRampToValueAtTime(0.85 * potencia, now + 0.12);
+            thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 3.2);
+
+            thunderSource.connect(thunderFilter);
+            thunderFilter.connect(thunderGain);
+            thunderGain.connect(masterGain);
+
+            thunderSource.start();
+            thunderSource.stop(now + 3.5);
+        }
+
+        function startSoundEngine() {
+            initAudioContext();
+            stopSoundEngine();
+
+            masterGain = audioCtx.createGain();
+            masterGain.connect(audioCtx.destination);
+
+            if (labAmenazaActual === 'lluvia') {
+                document.getElementById('nombreSonido').innerText = `Lluvia Acumulada (${labNivelActual.toUpperCase()})`;
+                
+                const noiseSrc = audioCtx.createBufferSource();
+                noiseSrc.buffer = createNaturalNoiseBuffer('pink');
+                noiseSrc.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = labNivelActual === 'amarillo' ? 450 : (labNivelActual === 'naranja' ? 950 : 2200);
+
+                const volume = labNivelActual === 'amarillo' ? 0.35 : (labNivelActual === 'naranja' ? 0.65 : 1.0);
+                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+                noiseSrc.connect(filter);
+                filter.connect(masterGain);
+                noiseSrc.start();
+                activeSources.push(noiseSrc);
+
+            } else if (labAmenazaActual === 'tormenta') {
+                document.getElementById('nombreSonido').innerText = `Tormenta Eléctrica (${labNivelActual.toUpperCase()})`;
+
+                // Capa 1: Lluvia continua de fondo
+                const rainSrc = audioCtx.createBufferSource();
+                rainSrc.buffer = createNaturalNoiseBuffer('pink');
+                rainSrc.loop = true;
+
+                const rainFilter = audioCtx.createBiquadFilter();
+                rainFilter.type = 'lowpass';
+                rainFilter.frequency.value = labNivelActual === 'amarillo' ? 600 : 1500;
+
+                rainSrc.connect(rainFilter);
+                rainFilter.connect(masterGain);
+                rainSrc.start();
+                activeSources.push(rainSrc);
+
+                // Volumen de salida
+                const volume = labNivelActual === 'amarillo' ? 0.45 : (labNivelActual === 'naranja' ? 0.85 : 1.0);
+                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+                // Disparo de estruendo inmediato al activar
+                triggerThunderClap(labNivelActual === 'rojo' ? 1.0 : (labNivelActual === 'naranja' ? 0.75 : 0.4));
+
+                // Ciclo recurrente de truenos
+                const intervalTime = labNivelActual === 'rojo' ? 4500 : (labNivelActual === 'naranja' ? 7000 : 12000);
+                thunderInterval = setInterval(() => {
+                    triggerThunderClap(labNivelActual === 'rojo' ? 1.0 : (labNivelActual === 'naranja' ? 0.75 : 0.4));
+                }, intervalTime);
+
+            } else if (labAmenazaActual === 'viento') {
+                document.getElementById('nombreSonido').innerText = `Vendaval y Ráfagas (${labNivelActual.toUpperCase()})`;
+
+                const windSrc = audioCtx.createBufferSource();
+                windSrc.buffer = createNaturalNoiseBuffer('brown');
+                windSrc.loop = true;
+
+                const windFilter = audioCtx.createBiquadFilter();
+                windFilter.type = 'bandpass';
+                windFilter.Q.value = labNivelActual === 'amarillo' ? 2.5 : 4.0;
+                windFilter.frequency.value = labNivelActual === 'amarillo' ? 280 : 450;
+
+                // Modulador de ráfagas continuas
+                const lfo = audioCtx.createOscillator();
+                lfo.frequency.value = labNivelActual === 'amarillo' ? 0.25 : (labNivelActual === 'naranja' ? 0.5 : 0.9);
+
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.value = labNivelActual === 'amarillo' ? 180 : (labNivelActual === 'naranja' ? 320 : 500);
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(windFilter.frequency);
+
+                const volume = labNivelActual === 'amarillo' ? 0.4 : (labNivelActual === 'naranja' ? 0.75 : 1.0);
+                masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+                windSrc.connect(windFilter);
+                windFilter.connect(masterGain);
+
+                windSrc.start();
+                lfo.start();
+                activeSources.push(windSrc, lfo);
+            }
+
+            isAudioPlaying = true;
+            document.getElementById('btnAudioToggle').innerText = 'Detener Sonido';
+        }
+
         function toggleAudio() {
             if (isAudioPlaying) {
-                stopRealAudio();
+                stopSoundEngine();
             } else {
-                playRealAudio();
+                startSoundEngine();
             }
         }
 
         function updateAudioState() {
             const bloqueAudio = document.getElementById('bloqueAudioContainer');
-            if (bancoAudiosReales[labAmenazaActual]) {
+            if (amenazasConAudio.includes(labAmenazaActual)) {
                 bloqueAudio.style.display = 'flex';
                 if (isAudioPlaying) {
-                    playRealAudio();
+                    startSoundEngine();
                 }
             } else {
                 bloqueAudio.style.display = 'none';
-                stopRealAudio();
+                stopSoundEngine();
             }
         }
 
-        // --- BASE DE DATOS MULTIAMENAZA Y UMBRALES SMN ---
+        // --- BASE DE DATOS Y MÉTRICAS SMN ---
         const baseMultiamenazaLab = {
             lluvia: {
                 amarillo: {
-                    umbral: "30 mm en 12 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "30 mm en 12 horas (Modelo Ref: SMN Argentina)",
                     volumen: "30 Litros por m² (~3 baldes de limpieza en un piso de 1x1 m).",
                     casa: "Equivale a volcar 6 tanques de agua (de 500 L) sobre el techo de una casa típica de 100 m².",
                     cuerpo: "El agua cubre el calzado y anega el cordón de la vereda.",
@@ -679,7 +790,7 @@
                     hText: "Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal."
                 },
                 naranja: {
-                    umbral: "60 mm en 12 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "60 mm en 12 horas (Modelo Ref: SMN Argentina)",
                     volumen: "60 Litros por m² (~6 baldes de limpieza llenos por cada metro cuadrado).",
                     casa: "Equivale a volcar 12 tanques de agua hogareños (de 500 L) sobre el techo de una casa de 100 m².",
                     cuerpo: "El agua supera la vereda y llega a la mitad de la pantorrilla/rodilla (20 a 40 cm).",
@@ -688,7 +799,7 @@
                     hText: "Regulación del sistema nervioso. Chequeá vecinos o familiares vulnerables. Elevá objetos de valor del suelo y evitá circular."
                 },
                 rojo: {
-                    umbral: "125 mm en 24 horas (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "125 mm en 24 horas (Modelo Ref: SMN Argentina)",
                     volumen: "125 Litros por m² (~12 baldes de agua por cada metro cuadrado).",
                     casa: "Equivale a volcar más de 25 tanques de agua (de 500 L) sobre el techo de tu casa en un solo día.",
                     cuerpo: "El agua supera el ingreso a viviendas (+50 cm) y desplaza vehículos.",
@@ -699,7 +810,7 @@
             },
             tormenta: {
                 amarillo: {
-                    umbral: "30 mm en 12 horas con ráfagas e intensa actividad eléctrica[cite: 1]",
+                    umbral: "30 mm en 12 horas con ráfagas e intensa actividad eléctrica",
                     volumen: "30 Litros por m² acompañados de descargas eléctricas lejanas.",
                     casa: "Riesgo de sobretensión eléctrica en electrodomésticos y caídas de ramas.",
                     cuerpo: "Sobresalto perceptivo por truenos e impactos repentinos de agua.",
@@ -708,7 +819,7 @@
                     hText: "Desconectá equipos electrónicos no indispensables. Permanecé en el interior de edificaciones firmes."
                 },
                 naranja: {
-                    umbral: "50 mm en 12 horas con granizo y ráfagas severas[cite: 1]",
+                    umbral: "50 mm en 12 horas con granizo y ráfagas severas",
                     volumen: "50 Litros por m² con caída eventual de granizo e impactos concentrados.",
                     casa: "Riesgo de rotura de cristales y voladura de objetos sueltos en balcones o patios.",
                     cuerpo: "Pérdida de visibilidad al conducir y riesgo en la intemperie por granizo.",
@@ -717,7 +828,7 @@
                     hText: "Alejate de ventanas y postigos. Resguardá vehículos bajo techos firmes y suspendé la circulación."
                 },
                 rojo: {
-                    umbral: "100 mm en 24 horas con tormentas severas continuas[cite: 1]",
+                    umbral: "100 mm en 24 horas con tormentas severas continuas",
                     volumen: "100 Litros por m² cayendo en picos torrenciales sostenidos.",
                     casa: "Saturación de techos, anegamientos severos e interrupción de servicios.",
                     cuerpo: "Riesgo extremo de electrocución en vía pública y arrastre por corrientes.",
@@ -728,7 +839,7 @@
             },
             viento: {
                 amarillo: {
-                    umbral: "Sostenido 65 km/h | Ráfagas 110 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "Sostenido 65 km/h | Ráfagas 110 km/h (Modelo Ref: SMN Argentina)",
                     volumen: "Fuerza equivalente a un auto circulando a velocidad en avenida empujando tu cuerpo.",
                     casa: "Presión continua sobre techos livianos, chapas y ventanales expuestos.",
                     cuerpo: "Resistencia clara al caminar; movimiento constante de copas de árboles y marquesinas.",
@@ -737,7 +848,7 @@
                     hText: "Atención activa. Asegurá elementos sueltos en balcones o patios (chapas, macetas) antes de que las ráfagas se intensifiquen."
                 },
                 naranja: {
-                    umbral: "Sostenido 110 km/h | Ráfagas 150 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "Sostenido 110 km/h | Ráfagas 150 km/h (Modelo Ref: SMN Argentina)",
                     volumen: "Fuerza de empuje capaz de quebrar ramas gruesas y desplazar contenedores pesados.",
                     casa: "Riesgo de desprendimiento de estructuras no fijadas correctamente.",
                     cuerpo: "Dificultad severa para mantenerse erguido al aire libre; peligro por objetos volantes.",
@@ -746,7 +857,7 @@
                     hText: "Mantenete alejado de ventanas y superficies vidriadas. Resguardá vehículos bajo techo firme y evitá la vía pública."
                 },
                 rojo: {
-                    umbral: "Sostenido >150 km/h | Ráfagas >185 km/h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "Sostenido >150 km/h | Ráfagas >185 km/h (Modelo Ref: SMN Argentina)",
                     volumen: "Fuerza destructiva con capacidad de colapso de techos e infraestructura.",
                     casa: "Exposición extrema en cubiertas de chapa y cartelería exterior.",
                     cuerpo: "Imposibilidad total de permanecer a pie; desplazamiento peligroso de estructuras.",
@@ -757,7 +868,7 @@
             },
             nieve: {
                 amarillo: {
-                    umbral: "20 - 30 cm de nieve / 30 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "20 - 30 cm de nieve / 30 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
                     volumen: "Masa acumulada que cubre por completo el calzado común.",
                     casa: "Peso liviano a moderado sobre cubiertas y acumulaciones en canaletas.",
                     cuerpo: "Oculta grietas o desniveles del terreno; reduce la tracción al caminar.",
@@ -766,7 +877,7 @@
                     hText: "Despejá accesos principales antes de que se congelen. Mantené reservas de abrigo y alimentos calientes a mano."
                 },
                 naranja: {
-                    umbral: "50 - 60 cm de nieve / 60 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "50 - 60 cm de nieve / 60 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
                     volumen: "Acumulación que supera las rodillas; inmoviliza vehículos sin cadenas.",
                     casa: "Sobrecarga de peso en techos planos y congestión en tuberías de gas/agua.",
                     cuerpo: "Desplazamiento a pie sumamente agotador; riesgo de hipotermia si hay humedad.",
@@ -775,7 +886,7 @@
                     hText: "Evitá cualquier desplazamiento interurbano. Racionalizá la energía y mantené una ventilación mínima si usás estufas a combustión."
                 },
                 rojo: {
-                    umbral: "80 - 90 cm de nieve / 120 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)[cite: 1]",
+                    umbral: "80 - 90 cm de nieve / 120 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
                     volumen: "Sepultura parcial de vehículos y bloqueo total de accesos exteriores.",
                     casa: "Riesgo estructural por acumulación masiva de peso seco/húmedo.",
                     cuerpo: "Imposibilidad de caminar por encima de la cintura. Aislamiento físico total.",
@@ -856,21 +967,21 @@
             renderLaboratorio();
         }
 
-        // --- RECOMENDACIONES POR ALERTA (PESTAÑA 2) ---
+        // --- RECOMENDACIONES ---
         const datosRecomendaciones = {
             lluvia: {
                 amarillo: {
-                    antes: ["Limpiá canaletas, desagües y rejillas (Ref. SMN: 30 mm/12 h)[cite: 1].", "Revisá que ventanas y puertas cierren correctamente.", "Evitá sacar la basura para no obstruir sumideros."],
+                    antes: ["Limpiá canaletas, desagües y rejillas (Ref. SMN: 30 mm/12 h).", "Revisá que ventanas y puertas cierren correctamente.", "Evitá sacar la basura para no obstruir sumideros."],
                     durante: ["Evitá salir de tu vivienda salvo necesidad.", "Manejá con precaución y reducí la velocidad."],
                     despues: ["Ventilá las zonas húmedas.", "Retirá hojas acumuladas."]
                 },
                 naranja: {
-                    antes: ["Resguardá objetos del patio o balcón (Ref. SMN: 60 mm/12 h)[cite: 1].", "Tené lista la mochila de emergencia con documentos resguardados."],
+                    antes: ["Resguardá objetos del patio o balcón (Ref. SMN: 60 mm/12 h).", "Tené lista la mochila de emergencia con documentos resguardados."],
                     durante: ["Permanecé en un lugar seguro.", "No toques postes de luz ni cables caídos."],
                     despues: ["Inspeccioná la vivienda antes de encender artefactos eléctricos."]
                 },
                 rojo: {
-                    antes: ["Desconectá suministros de luz y gas si el agua sube (Ref. SMN: 125 mm/24 h)[cite: 1].", "Llevá elementos de valor a zonas elevadas."],
+                    antes: ["Desconectá suministros de luz y gas si el agua sube (Ref. SMN: 125 mm/24 h).", "Llevá elementos de valor a zonas elevadas."],
                     durante: ["Evacuá si las autoridades locales así lo indican.", "No cruces corrientes de agua bajo ningún concepto."],
                     despues: ["Regresá solo cuando la autoridad lo declare seguro."]
                 }
@@ -894,24 +1005,24 @@
             },
             viento: {
                 amarillo: {
-                    antes: ["Asegurá chapas, macetas y elementos sueltos (Ref. SMN: 65 km/h)[cite: 1]."],
+                    antes: ["Asegurá chapas, macetas y elementos sueltos (Ref. SMN: 65 km/h)."],
                     durante: ["Evitá circular cerca de árboles grandes o carteles."],
                     despues: ["Verificá la estabilidad de muros y techos."]
                 },
                 naranja: {
-                    antes: ["Reforzá las fijaciones de techos livianos (Ref. SMN: 110 km/h)[cite: 1]."],
+                    antes: ["Reforzá las fijaciones de techos livianos (Ref. SMN: 110 km/h)."],
                     durante: ["Suspendé trabajos en altura.", "Permanecé alejado de cristales."],
                     despues: ["No toques cables derribados."]
                 },
                 rojo: {
-                    antes: ["Asegurá accesos y refugiá a la familia (Ref. SMN: 150 km/h)[cite: 1]."],
+                    antes: ["Asegurá accesos y refugiá a la familia (Ref. SMN: 150 km/h)."],
                     durante: ["Ubicáte en pasillos o baños sin ventanas."],
                     despues: ["Esperá a que amaine completamente antes de salir."]
                 }
             },
             nieve: {
                 amarillo: {
-                    antes: ["Verificá aislamiento de tuberías (Ref. SMN: 30 mm equiv./12 h)[cite: 1]."],
+                    antes: ["Verificá aislamiento de tuberías (Ref. SMN: 30 mm equiv./12 h)."],
                     durante: ["Circulá con cadenas en las ruedas."],
                     despues: ["Despejá la nieve acumulada en veredas."]
                 },
@@ -1004,7 +1115,7 @@
             a.click();
         }
 
-        // Inicializaciones
+        // Inicialización
         renderLaboratorio();
         actualizarVistaRecomendaciones();
     </script>
