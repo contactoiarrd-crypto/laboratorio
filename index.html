@@ -533,7 +533,7 @@
     </div>
 
     <script>
-        // --- NAVEGACIÓN ---
+        // --- NAVEGACIÓN BLINDADA ---
         function mostrarSeccion(id) {
             try {
                 document.querySelectorAll('.boton-seccion').forEach(b => b.classList.remove('activo'));
@@ -602,12 +602,10 @@
             }
         }
 
-        // --- MOTOR ACÚSTICO DE ALTA PRECISIÓN: TRUENOS REALISTAS CON DISPERSIÓN ACÚSTICA ---
+        // --- MOTOR ACÚSTICO ULTRALIVIANO (0% SATURACIÓN DE CPU) ---
         let audioCtx = null;
-        let masterGain = null;
         let activeSources = [];
         let thunderInterval = null;
-        let hailInterval = null;
         let isAudioPlaying = false;
 
         let labAmenazaActual = 'lluvia';
@@ -634,3 +632,376 @@
         function stopSoundEngine() {
             if (thunderInterval) {
                 clearInterval(thunderInterval);
+                thunderInterval = null;
+            }
+            activeSources.forEach(src => {
+                try { src.stop(); src.disconnect(); } catch(e){}
+            });
+            activeSources = [];
+            isAudioPlaying = false;
+            const btn = document.getElementById('btnAudioToggle');
+            if(btn) btn.innerText = 'Activar Sonido';
+        }
+
+        // Buffer estático reutilizable de 0.5s en memoria (sin cálculos pesados)
+        let staticLoopBuffer = null;
+        function getStaticNoiseBuffer() {
+            if (!staticLoopBuffer && audioCtx) {
+                const len = audioCtx.sampleRate * 0.5;
+                staticLoopBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+                const d = staticLoopBuffer.getChannelData(0);
+                for (let i = 0; i < len; i++) {
+                    d[i] = Math.random() * 2 - 1;
+                }
+            }
+            return staticLoopBuffer;
+        }
+
+        function destelloRelampagoVisual() {
+            const visor = document.getElementById('labVisualizerBox');
+            if(!visor) return;
+            const bgOriginal = visor.style.backgroundColor;
+            visor.style.backgroundColor = '#ffffff';
+            setTimeout(() => {
+                visor.style.backgroundColor = '#0f172a';
+                setTimeout(() => {
+                    visor.style.backgroundColor = '#ffffff';
+                    setTimeout(() => {
+                        visor.style.backgroundColor = bgOriginal;
+                    }, 40);
+                }, 30);
+            }, 50);
+        }
+
+        // TRUENO DISPARADO POR OSCILADORES DIRECTOS (NUNCA FALLA, NUNCA SE TRABA)
+        function triggerRealisticThunder(intensidad = 'amarillo') {
+            if (!isAudioPlaying || !audioCtx) return;
+
+            try {
+                const now = audioCtx.currentTime;
+                destelloRelampagoVisual();
+
+                const mult = intensidad === 'rojo' ? 1.0 : (intensidad === 'naranja' ? 0.75 : 0.45);
+
+                // 1. Golpe Seco de Rayo (Triangular con caída rápida)
+                const crack = audioCtx.createOscillator();
+                const crackGain = audioCtx.createGain();
+                crack.type = 'triangle';
+                crack.frequency.setValueAtTime(140, now);
+                crack.frequency.exponentialRampToValueAtTime(30, now + 0.18);
+
+                crackGain.gain.setValueAtTime(0.7 * mult, now);
+                crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+                crack.connect(crackGain);
+                crackGain.connect(audioCtx.destination);
+                crack.start(now);
+                crack.stop(now + 0.22);
+
+                // 2. Retumbo Grave y Cavernoso Sostenido
+                const rumble = audioCtx.createOscillator();
+                const rumbleGain = audioCtx.createGain();
+                const rumbleFilter = audioCtx.createBiquadFilter();
+
+                rumble.type = 'sawtooth';
+                rumble.frequency.setValueAtTime(75, now);
+                rumble.frequency.linearRampToValueAtTime(25, now + 2.5);
+
+                rumbleFilter.type = 'lowpass';
+                rumbleFilter.frequency.setValueAtTime(120, now);
+                rumbleFilter.frequency.linearRampToValueAtTime(40, now + 2.5);
+
+                rumbleGain.gain.setValueAtTime(0.2 * mult, now);
+                rumbleGain.gain.linearRampToValueAtTime(0.9 * mult, now + 0.08);
+                rumbleGain.gain.linearRampToValueAtTime(0.001, now + 2.6);
+
+                rumble.connect(rumbleFilter);
+                rumbleFilter.connect(rumbleGain);
+                rumbleGain.connect(audioCtx.destination);
+
+                rumble.start(now);
+                rumble.stop(now + 2.7);
+
+            } catch(e) {
+                console.error("Error al disparar trueno:", e);
+            }
+        }
+
+        function dispararTruenoManual() {
+            initAudioContext();
+            if(!isAudioPlaying) {
+                startSoundEngine();
+            }
+            triggerRealisticThunder(labNivelActual);
+        }
+
+        function startSoundEngine() {
+            try {
+                initAudioContext();
+                stopSoundEngine();
+
+                if(!audioCtx) return;
+
+                const buf = getStaticNoiseBuffer();
+
+                if (labAmenazaActual === 'lluvia') {
+                    document.getElementById('nombreSonido').innerText = `Lluvia Acumulada (${labNivelActual.toUpperCase()})`;
+                    
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = buf;
+                    src.loop = true;
+
+                    const f = audioCtx.createBiquadFilter();
+                    f.type = 'lowpass';
+                    f.frequency.value = labNivelActual === 'amarillo' ? 450 : (labNivelActual === 'naranja' ? 850 : 1600);
+
+                    const g = audioCtx.createGain();
+                    g.gain.value = labNivelActual === 'amarillo' ? 0.2 : (labNivelActual === 'naranja' ? 0.45 : 0.7);
+
+                    src.connect(f);
+                    f.connect(g);
+                    g.connect(audioCtx.destination);
+                    src.start();
+                    activeSources.push(src);
+
+                } else if (labAmenazaActual === 'tormenta') {
+                    document.getElementById('nombreSonido').innerText = `Tormenta Severa (${labNivelActual.toUpperCase()})`;
+
+                    // Lluvia continua de fondo
+                    const rain = audioCtx.createBufferSource();
+                    rain.buffer = buf;
+                    rain.loop = true;
+
+                    const rf = audioCtx.createBiquadFilter();
+                    rf.type = 'lowpass';
+                    rf.frequency.value = 750;
+
+                    const rg = audioCtx.createGain();
+                    rg.gain.value = 0.35;
+
+                    rain.connect(rf);
+                    rf.connect(rg);
+                    rg.connect(audioCtx.destination);
+                    rain.start();
+                    activeSources.push(rain);
+
+                    // Disparo inmediato de trueno
+                    isAudioPlaying = true;
+                    triggerRealisticThunder(labNivelActual);
+
+                    // Cadencia automática ligera
+                    const cadencia = labNivelActual === 'rojo' ? 3200 : (labNivelActual === 'naranja' ? 4800 : 7000);
+                    thunderInterval = setInterval(() => {
+                        triggerRealisticThunder(labNivelActual);
+                    }, cadencia);
+
+                } else if (labAmenazaActual === 'viento') {
+                    document.getElementById('nombreSonido').innerText = `Vendaval y Ráfagas (${labNivelActual.toUpperCase()})`;
+
+                    const wind = audioCtx.createBufferSource();
+                    wind.buffer = buf;
+                    wind.loop = true;
+
+                    const wf = audioCtx.createBiquadFilter();
+                    wf.type = 'bandpass';
+                    wf.frequency.value = 350;
+                    wf.Q.value = 3.0;
+
+                    const lfo = audioCtx.createOscillator();
+                    lfo.frequency.value = labNivelActual === 'amarillo' ? 0.3 : 0.7;
+
+                    const lfoG = audioCtx.createGain();
+                    lfoG.gain.value = 180;
+
+                    lfo.connect(lfoG);
+                    lfoG.connect(wf.frequency);
+
+                    const wg = audioCtx.createGain();
+                    wg.gain.value = labNivelActual === 'amarillo' ? 0.3 : 0.6;
+
+                    wind.connect(wf);
+                    wf.connect(wg);
+                    wg.connect(audioCtx.destination);
+
+                    wind.start();
+                    lfo.start();
+                    activeSources.push(wind, lfo);
+                }
+
+                isAudioPlaying = true;
+                const btn = document.getElementById('btnAudioToggle');
+                if(btn) btn.innerText = 'Detener Sonido';
+            } catch(e) {
+                console.error("Error en startSoundEngine:", e);
+            }
+        }
+
+        function toggleAudio() {
+            if (isAudioPlaying) {
+                stopSoundEngine();
+            } else {
+                startSoundEngine();
+            }
+        }
+
+        function updateAudioState() {
+            const bloqueAudio = document.getElementById('bloqueAudioContainer');
+            const btnManual = document.getElementById('btnTruenoManual');
+            if(!bloqueAudio) return;
+
+            if (amenazasConAudio.includes(labAmenazaActual)) {
+                bloqueAudio.style.display = 'flex';
+                if(btnManual) {
+                    btnManual.style.display = labAmenazaActual === 'tormenta' ? 'inline-block' : 'none';
+                }
+                if (isAudioPlaying) {
+                    startSoundEngine();
+                }
+            } else {
+                bloqueAudio.style.display = 'none';
+                stopSoundEngine();
+            }
+        }
+
+        // --- BASE DE DATOS Y MÉTRICAS SMN ---
+        const baseMultiamenazaLab = {
+            lluvia: {
+                amarillo: {
+                    umbral: "30 mm en 12 horas (Modelo Ref: SMN Argentina)",
+                    volumen: "30 Litros por m² (~3 baldes de limpieza en un piso de 1x1 m).",
+                    casa: "Equivale a volcar 6 tanques de agua (de 500 L) sobre el techo de una casa típica de 100 m².",
+                    cuerpo: "El agua cubre el calzado y anega el cordón de la vereda.",
+                    color: "#d97706", height: "18%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Observación y Orden",
+                    hText: "Presencia tranquila. Revisá que no haya bolsas u hojas en las rejillas. Prepará el espacio físico antes de que aumente el caudal."
+                },
+                naranja: {
+                    umbral: "60 mm en 12 horas (Modelo Ref: SMN Argentina)",
+                    volumen: "60 Litros por m² (~6 baldes de limpieza llenos por cada metro cuadrado).",
+                    casa: "Equivale a volcar 12 tanques de agua hogareños (de 500 L) sobre el techo de una casa de 100 m².",
+                    cuerpo: "El agua supera la vereda y llega a la mitad de la pantorrilla/rodilla (20 a 40 cm).",
+                    color: "#ea580c", height: "45%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Alerta Enfocada y Red",
+                    hText: "Regulación del sistema nervioso. Chequeá vecinos o familiares vulnerables. Elevá objetos de valor del suelo y evitá circular."
+                },
+                rojo: {
+                    umbral: "125 mm en 24 horas (Modelo Ref: SMN Argentina)",
+                    volumen: "125 Litros por m² (~12 baldes de agua por cada metro cuadrado).",
+                    casa: "Equivale a volcar más de 25 tanques de agua (de 500 L) sobre el techo de tu casa en un solo día.",
+                    cuerpo: "El agua supera el ingreso a viviendas (+50 cm) y desplaza vehículos.",
+                    color: "#dc2626", height: "80%", transform: "rotate(0deg)", bgVisor: "#020617",
+                    hTitle: "Estado: Presencia Absoluta y Calma",
+                    hText: "Centramiento interior para tomar decisiones lúcidas. Cortá suministros eléctricos si ingresa agua y buscá zonas elevadas."
+                }
+            },
+            tormenta: {
+                amarillo: {
+                    umbral: "30 mm en 12 horas con ráfagas e intensa actividad eléctrica",
+                    volumen: "30 Litros por m² acompañados de truenos lejanos.",
+                    casa: "Riesgo de sobretensión eléctrica en electrodomésticos y caídas de ramas.",
+                    cuerpo: "Sobresalto perceptivo por truenos e impactos repentinos de agua.",
+                    color: "#d97706", height: "20%", transform: "rotate(0deg)", bgVisor: "#090d16",
+                    hTitle: "Estado: Resguardo Eléctrico",
+                    hText: "Desconectá equipos electrónicos no indispensables. Permanecé en el interior de edificaciones firmes."
+                },
+                naranja: {
+                    umbral: "50 mm en 12 horas con granizo y ráfagas severas",
+                    volumen: "50 Litros por m² con caída de granizo e impactos concentrados.",
+                    casa: "Riesgo de rotura de cristales y abolladuras en techos por granizo.",
+                    cuerpo: "Pérdida de visibilidad al conducir y riesgo en la intemperie por impacto de granizo.",
+                    color: "#ea580c", height: "50%", transform: "rotate(0deg)", bgVisor: "#111827",
+                    hTitle: "Estado: Alejamiento de Riesgos Físicos",
+                    hText: "Alejate de ventanas y postigos. Resguardá vehículos bajo techos firmes y suspendé la circulación."
+                },
+                rojo: {
+                    umbral: "100 mm en 24 horas con tormentas severas continuas",
+                    volumen: "100 Litros por m² con temporal de granizo destructivo.",
+                    casa: "Saturación de techos, anegamientos severos e interrupción total de servicios.",
+                    cuerpo: "Riesgo extremo de electrocución en vía pública y arrastre por corrientes.",
+                    color: "#dc2626", height: "85%", transform: "rotate(0deg)", bgVisor: "#1f1315",
+                    hTitle: "Estado: Protección de la Vida",
+                    hText: "Corta la energía eléctrica si hay ingreso de agua. Mantener la calma y no salir a la intemperie bajo ningún concepto."
+                }
+            },
+            viento: {
+                amarillo: {
+                    umbral: "Sostenido 65 km/h | Ráfagas 110 km/h (Modelo Ref: SMN Argentina)",
+                    volumen: "Fuerza equivalente a un auto circulando a velocidad en avenida empujando tu cuerpo.",
+                    casa: "Presión continua sobre techos livianos, chapas y ventanales expuestos.",
+                    cuerpo: "Resistencia clara al caminar; movimiento constante de copas de árboles y marquesinas.",
+                    color: "#d97706", height: "0%", transform: "rotate(5deg)", bgVisor: "#0f172a",
+                    hTitle: "Estado: Fijación y Resguardo",
+                    hText: "Atención activa. Asegurá elementos sueltos en balcones o patios (chapas, macetas) antes de que las ráfagas se intensifiquen."
+                },
+                naranja: {
+                    umbral: "Sostenido 110 km/h | Ráfagas 150 km/h (Modelo Ref: SMN Argentina)",
+                    volumen: "Fuerza de empuje capaz de quebrar ramas gruesas y desplazar contenedores pesados.",
+                    casa: "Riesgo de desprendimiento de estructuras no fijadas correctamente.",
+                    cuerpo: "Dificultad severa para mantenerse erguido al aire libre; peligro por objetos volantes.",
+                    color: "#ea580c", height: "0%", transform: "rotate(15deg)", bgVisor: "#1e1b4b",
+                    hTitle: "Estado: Refugio Inmóvil",
+                    hText: "Mantenete alejado de ventanas y superficies vidriadas. Resguardá vehículos bajo techo firme y evitá la vía pública."
+                },
+                rojo: {
+                    umbral: "Sostenido >150 km/h | Ráfagas >185 km/h (Modelo Ref: SMN Argentina)",
+                    volumen: "Fuerza destructiva con capacidad de colapso de techos e infraestructura.",
+                    casa: "Exposición extrema en cubiertas de chapa y cartelería exterior.",
+                    cuerpo: "Imposibilidad total de permanecer a pie; desplazamiento peligroso de estructuras.",
+                    color: "#dc2626", height: "0%", transform: "rotate(28deg)", bgVisor: "#311212",
+                    hTitle: "Estado: Anclaje y Protección Estructural",
+                    hText: "Ubicáte en la habitación más interna de la vivienda (pasillos o baños sin ventanas). Mantener la respiración pausada en grupo."
+                }
+            },
+            nieve: {
+                amarillo: {
+                    umbral: "20 - 30 cm de nieve / 30 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
+                    volumen: "Masa acumulada que cubre por completo el calzado común.",
+                    casa: "Peso liviano a moderado sobre cubiertas y acumulaciones en canaletas.",
+                    cuerpo: "Oculta grietas o desniveles del terreno; reduce la tracción al caminar.",
+                    color: "#d97706", height: "20%", transform: "rotate(0deg)", bgVisor: "#0f172a",
+                    hTitle: "Estado: Aislamiento Preventivo",
+                    hText: "Despejá accesos principales antes de que se congelen. Mantené reservas de abrigo y alimentos calientes a mano."
+                },
+                naranja: {
+                    umbral: "50 - 60 cm de nieve / 60 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
+                    volumen: "Acumulación que supera las rodillas; inmoviliza vehículos sin cadenas.",
+                    casa: "Sobrecarga de peso en techos planos y congestión en tuberías de gas/agua.",
+                    cuerpo: "Desplazamiento a pie sumamente agotador; riesgo de hipotermia si hay humedad.",
+                    color: "#ea580c", height: "55%", transform: "rotate(0deg)", bgVisor: "#1e293b",
+                    hTitle: "Estado: Conservación Térmica",
+                    hText: "Evitá cualquier desplazamiento interurbano. Racionalizá la energía y mantené una ventilación mínima si usás estufas a combustión."
+                },
+                rojo: {
+                    umbral: "80 - 90 cm de nieve / 120 mm equiv. lluvia en 24 h (Modelo Ref: SMN Argentina)",
+                    volumen: "Sepultura parcial de vehículos y bloqueo total de accesos exteriores.",
+                    casa: "Riesgo estructural por acumulación masiva de peso seco/húmedo.",
+                    cuerpo: "Imposibilidad de caminar por encima de la cintura. Aislamiento físico total.",
+                    color: "#dc2626", height: "85%", transform: "rotate(0deg)", bgVisor: "#334155",
+                    hTitle: "Estado: Calma y Autocontención",
+                    hText: "Aguardá la asistencia de despejadoras o rescate oficial. Mantené la temperatura corporal mediante capas de ropa secas."
+                }
+            },
+            calor: {
+                amarillo: {
+                    umbral: "Alerta Nivel Amarillo por Temperatura Extrema (SMN)",
+                    volumen: "Pérdida pasiva de 0.5 a 1 litro de agua corporal por hora a la sombra.",
+                    casa: "Acumulación de calor en paredes y techos sin aislación térmica.",
+                    cuerpo: "Sensación de pesadez corporal y ligera aceleración del pulso en reposo.",
+                    color: "#d97706", height: "100%", transform: "rotate(0deg)", bgVisor: "#451a03",
+                    hTitle: "Estado: Hidratación Consciente",
+                    hText: "Bebé agua de manera continua sin esperar a tener sed. Bajá el ritmo de las actividades en las horas centrales del día."
+                },
+                naranja: {
+                    umbral: "Alerta Nivel Naranja por Temperatura Extrema (SMN)",
+                    volumen: "Elevado estrés térmico. Exposición al sol genera riesgo de insolación.",
+                    casa: "Ambientes cerrados concentran temperaturas superiores al exterior.",
+                    cuerpo: "Vasodilatación, sudoración copiosa, mareos leves y cansancio generalizado.",
+                    color: "#ea580c", height: "100%", transform: "rotate(0deg)", bgVisor: "#7c2d12",
+                    hTitle: "Estado: Enfriamiento y Cuidado de Vulnerables",
+                    hText: "Permanecé en los espacios más frescos del hogar. Aplicá paños húmedos en nuca y muñecas. Monitoreá a niños y adultos mayores."
+                },
+                rojo: {
+                    umbral: "Alerta Nivel Rojo por Temperatura Extrema (SMN)",
+                    volumen: "Temperatura ambiental cercana o superior a la corporal (37°C).",
+                    casa: "Saturación térmica; dificultad para refrigerar espacios sin climatización.",
+                    cuerpo: "Riesgo
