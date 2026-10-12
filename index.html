@@ -359,7 +359,7 @@
                     <label style="color: #cbd5e1;">Seleccioná la amenaza a experimentar:</label>
                     <select id="labAmenazaSelect" onchange="cambiarAmenazaLab()">
                         <option value="lluvia">💧 Lluvias Acumuladas</option>
-                        <option value="tormenta">⚡ Tormentas Fuertes (Actividad Eléctrica)</option>
+                        <option value="tormenta">⚡ Tormentas Fuertes (Truenos, Rayos y Granizo)</option>
                         <option value="viento">🍃 Viento e Intensidad de Ráfagas</option>
                         <option value="nieve">❄️ Nevadas e Imposibilidad de Desplazamiento</option>
                         <option value="calor">🌡️ Ola de Calor (Estrés Térmico)</option>
@@ -576,11 +576,12 @@
             }
         }
 
-        // --- MOTOR ACÚSTICO AUTOCONTENIDO (SIN DESCARGAS NI DEPENDENCIAS) ---
+        // --- MOTOR ACÚSTICO AVANZADO CON TRUENOS REALES Y GRANIZO ---
         let audioCtx = null;
         let masterGain = null;
         let activeSources = [];
         let thunderInterval = null;
+        let hailInterval = null;
         let isAudioPlaying = false;
 
         let labAmenazaActual = 'lluvia';
@@ -602,6 +603,10 @@
                 clearInterval(thunderInterval);
                 thunderInterval = null;
             }
+            if (hailInterval) {
+                clearInterval(hailInterval);
+                hailInterval = null;
+            }
             activeSources.forEach(src => {
                 try { src.stop(); src.disconnect(); } catch(e){}
             });
@@ -610,7 +615,6 @@
             document.getElementById('btnAudioToggle').innerText = 'Activar Sonido';
         }
 
-        // Generador de buffer de ruido rosa/marrón orgánico continuo
         function createNaturalNoiseBuffer(type = 'pink') {
             const bufferSize = audioCtx.sampleRate * 4;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -629,7 +633,6 @@
                     data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
                     b6 = white * 0.115926;
                 } else {
-                    // Brown/Red noise para impacto de agua y viento grave
                     b0 = (b0 + (0.02 * white)) / 1.02;
                     data[i] = b0 * 3.5;
                 }
@@ -637,30 +640,77 @@
             return buffer;
         }
 
-        function triggerThunderClap(potencia = 1.0) {
+        // Generador de trueno con estruendo seco y retumbo de baja frecuencia
+        function triggerRealisticThunder(intensidad = 'amarillo') {
             if (!isAudioPlaying || !audioCtx) return;
 
+            const now = audioCtx.currentTime;
+
+            // 1. Estruendo seco inicial del rayo
+            if (intensidad === 'naranja' || intensidad === 'rojo') {
+                const crackOsc = audioCtx.createOscillator();
+                const crackGain = audioCtx.createGain();
+                crackOsc.type = 'triangle';
+                crackOsc.frequency.setValueAtTime(160, now);
+                crackOsc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+
+                crackGain.gain.setValueAtTime(intensidad === 'rojo' ? 1.0 : 0.6, now);
+                crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                crackOsc.connect(crackGain);
+                crackGain.connect(masterGain);
+                crackOsc.start(now);
+                crackOsc.stop(now + 0.2);
+            }
+
+            // 2. Retumbo sostenido y reverberante
             const thunderBuffer = createNaturalNoiseBuffer('brown');
             const thunderSource = audioCtx.createBufferSource();
             thunderSource.buffer = thunderBuffer;
 
             const thunderFilter = audioCtx.createBiquadFilter();
             thunderFilter.type = 'lowpass';
-            thunderFilter.frequency.setValueAtTime(140, audioCtx.currentTime);
-            thunderFilter.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 2.5);
+            const fInicial = intensidad === 'rojo' ? 240 : (intensidad === 'naranja' ? 180 : 110);
+            thunderFilter.frequency.setValueAtTime(fInicial, now);
+            thunderFilter.frequency.exponentialRampToValueAtTime(35, now + 3.2);
 
             const thunderGain = audioCtx.createGain();
-            const now = audioCtx.currentTime;
-            thunderGain.gain.setValueAtTime(0.01, now);
-            thunderGain.gain.linearRampToValueAtTime(0.85 * potencia, now + 0.12);
-            thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 3.2);
+            const volMax = intensidad === 'rojo' ? 1.0 : (intensidad === 'naranja' ? 0.75 : 0.4);
+            thunderGain.gain.setValueAtTime(0.05, now);
+            thunderGain.gain.linearRampToValueAtTime(volMax, now + 0.08);
+            thunderGain.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
 
             thunderSource.connect(thunderFilter);
             thunderFilter.connect(thunderGain);
             thunderGain.connect(masterGain);
 
-            thunderSource.start();
-            thunderSource.stop(now + 3.5);
+            thunderSource.start(now);
+            thunderSource.stop(now + 3.6);
+        }
+
+        // Generador de impacto de piedra de granizo contra chapa/vidrio
+        function triggerHailStone() {
+            if (!isAudioPlaying || !audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const hailOsc = audioCtx.createOscillator();
+            const hailGain = audioCtx.createGain();
+
+            // Frecuencias metálicas de impacto seco
+            const freq = 1200 + Math.random() * 1800;
+            hailOsc.type = 'sine';
+            hailOsc.frequency.setValueAtTime(freq, now);
+            hailOsc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.03);
+
+            const vol = 0.05 + Math.random() * 0.15;
+            hailGain.gain.setValueAtTime(vol, now);
+            hailGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+            hailOsc.connect(hailGain);
+            hailGain.connect(masterGain);
+
+            hailOsc.start(now);
+            hailOsc.stop(now + 0.04);
         }
 
         function startSoundEngine() {
@@ -690,34 +740,45 @@
                 activeSources.push(noiseSrc);
 
             } else if (labAmenazaActual === 'tormenta') {
-                document.getElementById('nombreSonido').innerText = `Tormenta Eléctrica (${labNivelActual.toUpperCase()})`;
+                document.getElementById('nombreSonido').innerText = `Tormenta Severa con Granizo (${labNivelActual.toUpperCase()})`;
 
-                // Capa 1: Lluvia continua de fondo
+                // Capa 1: Lluvia continua torrencial
                 const rainSrc = audioCtx.createBufferSource();
                 rainSrc.buffer = createNaturalNoiseBuffer('pink');
                 rainSrc.loop = true;
 
                 const rainFilter = audioCtx.createBiquadFilter();
                 rainFilter.type = 'lowpass';
-                rainFilter.frequency.value = labNivelActual === 'amarillo' ? 600 : 1500;
+                rainFilter.frequency.value = labNivelActual === 'amarillo' ? 600 : 1600;
 
                 rainSrc.connect(rainFilter);
                 rainFilter.connect(masterGain);
                 rainSrc.start();
                 activeSources.push(rainSrc);
 
-                // Volumen de salida
-                const volume = labNivelActual === 'amarillo' ? 0.45 : (labNivelActual === 'naranja' ? 0.85 : 1.0);
+                // Volumen general
+                const volume = labNivelActual === 'amarillo' ? 0.5 : (labNivelActual === 'naranja' ? 0.85 : 1.0);
                 masterGain.gain.setValueAtTime(volume, audioCtx.currentTime);
 
-                // Disparo de estruendo inmediato al activar
-                triggerThunderClap(labNivelActual === 'rojo' ? 1.0 : (labNivelActual === 'naranja' ? 0.75 : 0.4));
+                // Disparo de trueno inicial al presionar play
+                triggerRealisticThunder(labNivelActual);
 
-                // Ciclo recurrente de truenos
-                const intervalTime = labNivelActual === 'rojo' ? 4500 : (labNivelActual === 'naranja' ? 7000 : 12000);
+                // Cadencia de truenos según severidad
+                const tIntervalo = labNivelActual === 'rojo' ? 3800 : (labNivelActual === 'naranja' ? 6000 : 10000);
                 thunderInterval = setInterval(() => {
-                    triggerThunderClap(labNivelActual === 'rojo' ? 1.0 : (labNivelActual === 'naranja' ? 0.75 : 0.4));
-                }, intervalTime);
+                    triggerRealisticThunder(labNivelActual);
+                }, tIntervalo);
+
+                // Capa 2: Repiqueteo de granizo en Naranja y Rojo
+                if (labNivelActual === 'naranja' || labNivelActual === 'rojo') {
+                    const hVelocidad = labNivelActual === 'rojo' ? 45 : 90; // Milisegundos entre piedras
+                    hailInterval = setInterval(() => {
+                        triggerHailStone();
+                        if (labNivelActual === 'rojo' && Math.random() > 0.4) {
+                            triggerHailStone(); // Ráfagas dobles en nivel rojo
+                        }
+                    }, hVelocidad);
+                }
 
             } else if (labAmenazaActual === 'viento') {
                 document.getElementById('nombreSonido').innerText = `Vendaval y Ráfagas (${labNivelActual.toUpperCase()})`;
@@ -731,7 +792,6 @@
                 windFilter.Q.value = labNivelActual === 'amarillo' ? 2.5 : 4.0;
                 windFilter.frequency.value = labNivelActual === 'amarillo' ? 280 : 450;
 
-                // Modulador de ráfagas continuas
                 const lfo = audioCtx.createOscillator();
                 lfo.frequency.value = labNivelActual === 'amarillo' ? 0.25 : (labNivelActual === 'naranja' ? 0.5 : 0.9);
 
@@ -811,7 +871,7 @@
             tormenta: {
                 amarillo: {
                     umbral: "30 mm en 12 horas con ráfagas e intensa actividad eléctrica",
-                    volumen: "30 Litros por m² acompañados de descargas eléctricas lejanas.",
+                    volumen: "30 Litros por m² acompañados de truenos lejanos.",
                     casa: "Riesgo de sobretensión eléctrica en electrodomésticos y caídas de ramas.",
                     cuerpo: "Sobresalto perceptivo por truenos e impactos repentinos de agua.",
                     color: "#d97706", height: "20%", transform: "rotate(0deg)", bgVisor: "#090d16",
@@ -820,17 +880,17 @@
                 },
                 naranja: {
                     umbral: "50 mm en 12 horas con granizo y ráfagas severas",
-                    volumen: "50 Litros por m² con caída eventual de granizo e impactos concentrados.",
-                    casa: "Riesgo de rotura de cristales y voladura de objetos sueltos en balcones o patios.",
-                    cuerpo: "Pérdida de visibilidad al conducir y riesgo en la intemperie por granizo.",
+                    volumen: "50 Litros por m² con caída de granizo e impactos concentrados.",
+                    casa: "Riesgo de rotura de cristales y abolladuras en techos por granizo.",
+                    cuerpo: "Pérdida de visibilidad al conducir y riesgo en la intemperie por impacto de granizo.",
                     color: "#ea580c", height: "50%", transform: "rotate(0deg)", bgVisor: "#111827",
                     hTitle: "Estado: Alejamiento de Riesgos Físicos",
                     hText: "Alejate de ventanas y postigos. Resguardá vehículos bajo techos firmes y suspendé la circulación."
                 },
                 rojo: {
                     umbral: "100 mm en 24 horas con tormentas severas continuas",
-                    volumen: "100 Litros por m² cayendo en picos torrenciales sostenidos.",
-                    casa: "Saturación de techos, anegamientos severos e interrupción de servicios.",
+                    volumen: "100 Litros por m² con temporal de granizo destructivo.",
+                    casa: "Saturación de techos, anegamientos severos e interrupción total de servicios.",
                     cuerpo: "Riesgo extremo de electrocución en vía pública y arrastre por corrientes.",
                     color: "#dc2626", height: "85%", transform: "rotate(0deg)", bgVisor: "#1f1315",
                     hTitle: "Estado: Protección de la Vida",
@@ -984,140 +1044,3 @@
                     antes: ["Desconectá suministros de luz y gas si el agua sube (Ref. SMN: 125 mm/24 h).", "Llevá elementos de valor a zonas elevadas."],
                     durante: ["Evacuá si las autoridades locales así lo indican.", "No cruces corrientes de agua bajo ningún concepto."],
                     despues: ["Regresá solo cuando la autoridad lo declare seguro."]
-                }
-            },
-            tormenta: {
-                amarillo: {
-                    antes: ["Asegurá objetos sueltos en balcones.", "Cargá dispositivos de comunicación."],
-                    durante: ["Permanecé dentro de construcciones firmes.", "Desconectá aparatos sensibles."],
-                    despues: ["Constatá que la instalación eléctrica no presente fallas."]
-                },
-                naranja: {
-                    antes: ["Desconectá electrodomésticos.", "Resguardá el vehículo bajo techo firme."],
-                    durante: ["Alejate de estructuras metálicas y árboles aislados."],
-                    despues: ["Circulá con precaución ante postes caídos."]
-                },
-                rojo: {
-                    antes: ["Cortá los suministros generales.", "Ubicáte en la habitación más central del inmueble."],
-                    durante: ["No salgas a la intemperie bajo ninguna circunstancia."],
-                    despues: ["Aguardá indicaciones oficiales para tareas exteriores."]
-                }
-            },
-            viento: {
-                amarillo: {
-                    antes: ["Asegurá chapas, macetas y elementos sueltos (Ref. SMN: 65 km/h)."],
-                    durante: ["Evitá circular cerca de árboles grandes o carteles."],
-                    despues: ["Verificá la estabilidad de muros y techos."]
-                },
-                naranja: {
-                    antes: ["Reforzá las fijaciones de techos livianos (Ref. SMN: 110 km/h)."],
-                    durante: ["Suspendé trabajos en altura.", "Permanecé alejado de cristales."],
-                    despues: ["No toques cables derribados."]
-                },
-                rojo: {
-                    antes: ["Asegurá accesos y refugiá a la familia (Ref. SMN: 150 km/h)."],
-                    durante: ["Ubicáte en pasillos o baños sin ventanas."],
-                    despues: ["Esperá a que amaine completamente antes de salir."]
-                }
-            },
-            nieve: {
-                amarillo: {
-                    antes: ["Verificá aislamiento de tuberías (Ref. SMN: 30 mm equiv./12 h)."],
-                    durante: ["Circulá con cadenas en las ruedas."],
-                    despues: ["Despejá la nieve acumulada en veredas."]
-                },
-                naranja: {
-                    antes: ["Evitá desplazamientos interurbanos."],
-                    durante: ["Mantené el auto encendido a intervalos con ventana entreabierta si quedás atrapado."],
-                    despues: ["Caminá con cuidado sobre el hielo."]
-                },
-                rojo: {
-                    antes: ["Permanecé aislado y racionalizá la energía."],
-                    durante: ["No intentes caminar en medio de ventiscas."],
-                    despues: ["Aguardá a las máquinas despejadoras."]
-                }
-            },
-            calor: {
-                amarillo: {
-                    antes: ["Ventilá la casa durante las horas más frescas.", "Asegurá reservas de agua potable."],
-                    durante: ["Tomá agua con frecuencia sin esperar a tener sed.", "Evitá exposición directa al sol entre las 10 y 16 hs."],
-                    despues: ["Mantené comidas livianas y buena hidratación."]
-                },
-                naranja: {
-                    antes: ["Cerrá persianas en fachadas expuestas al sol."],
-                    durante: ["Usá ropa clara y de algodón.", "Ofrecé agua permanentemente a niños y adultos mayores."],
-                    despues: ["Vigilá síntomas como dolor de cabeza o mareos."]
-                },
-                rojo: {
-                    antes: ["Identificá centros de salud cercanos y evitá esfuerzos físicos."],
-                    durante: ["Permanecé en los ambientes más frescos o climatizados.", "Aplicá paños húmedos si sentís calor excesivo."],
-                    despues: ["Ante confusión o fiebre alta, solicitá emergencias de inmediato."]
-                }
-            }
-        };
-
-        const recomendacionesMascotas = {
-            amarillo: ["Ingresá a tus mascotas al interior de la vivienda.", "Asegurate de que tengan agua fresca y alimento resguardado."],
-            naranja: ["Mantené a los perros con collar, correa e identificación.", "Ubicá a los gatos en transportadoras o habitaciones cerradas."],
-            rojo: ["Si debés evacuar, llevá a tus mascotas con su alimento y kit básico.", "Jamás dejes a los animales atados o encerrados sin posibilidad de escape."]
-        };
-
-        let nivelSeleccionado = 'amarillo';
-        let faseSeleccionada = 'antes';
-
-        function actualizarVistaRecomendaciones() {
-            const amenaza = document.getElementById('tipo-amenaza').value;
-            const cartel = document.getElementById('cartel-alerta');
-            const texto = document.getElementById('texto-cartel');
-
-            cartel.className = `encabezado-alerta ${nivelSeleccionado}`;
-            texto.innerText = nivelSeleccionado === 'amarillo' ? 'ALERTA AMARILLA: Informate y tomá precauciones.' : (nivelSeleccionado === 'naranja' ? 'ALERTA NARANJA: Preparate y tené lista la respuesta.' : 'ALERTA ROJA: Tomá acción inmediata y protegé la vida.');
-
-            const acciones = datosRecomendaciones[amenaza][nivelSeleccionado][faseSeleccionada];
-            document.getElementById('lista-acciones').innerHTML = acciones.map(i => `<li>${i}</li>`).join('');
-            document.getElementById('lista-mascotas').innerHTML = recomendacionesMascotas[nivelSeleccionado].map(i => `<li>${i}</li>`).join('');
-        }
-
-        document.getElementById('tipo-amenaza').addEventListener('change', actualizarVistaRecomendaciones);
-        document.querySelectorAll('.boton-nivel').forEach(b => {
-            b.addEventListener('click', () => {
-                document.querySelectorAll('.boton-nivel').forEach(x => x.classList.remove('activo'));
-                b.classList.add('activo');
-                nivelSeleccionado = b.getAttribute('data-nivel');
-                actualizarVistaRecomendaciones();
-            });
-        });
-        document.querySelectorAll('.boton-fase').forEach(b => {
-            b.addEventListener('click', () => {
-                document.querySelectorAll('.boton-fase').forEach(x => x.classList.remove('activo'));
-                b.classList.add('activo');
-                faseSeleccionada = b.getAttribute('data-fase');
-                actualizarVistaRecomendaciones();
-            });
-        });
-
-        // --- PLAN FAMILIAR CHECKLIST ---
-        function actualizarProgreso() {
-            const cbs = document.querySelectorAll('.elemento-checklist input[type="checkbox"]');
-            const marcados = Array.from(cbs).filter(c => c.checked).length;
-            document.getElementById('barra-progreso').style.width = `${(marcados / cbs.length) * 100}%`;
-        }
-
-        function descargarListaTexto() {
-            let txt = "PLAN DE EMERGENCIA FAMILIAR - IIARRD\n===================================\n\n";
-            document.querySelectorAll('.elemento-checklist').forEach(e => {
-                const cb = e.querySelector('input').checked ? "[COMPLETADO]" : "[PENDIENTE]";
-                txt += `${cb} ${e.querySelector('label').childNodes[0].textContent.trim()}\n   ${e.querySelector('small').textContent.trim()}\n\n`;
-            });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([txt], {type: 'text/plain;charset=utf-8'}));
-            a.download = 'Plan_Familiar_IIARRD.txt';
-            a.click();
-        }
-
-        // Inicialización
-        renderLaboratorio();
-        actualizarVistaRecomendaciones();
-    </script>
-</body>
-</html>
